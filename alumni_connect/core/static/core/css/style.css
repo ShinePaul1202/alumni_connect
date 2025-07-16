@@ -1,0 +1,190 @@
+/* General Body & Font Styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* The main container holds the background image */
+.login-container {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    box-sizing: border-box;
+
+    background: url('../images/images.jpg') no-repeat center center;
+    background-size: cover;
+}
+
+/* The Frosted Glass Form - Now slightly more opaque for readability */
+.login-form {
+    width: 100%;
+    max-width: 450px;
+    padding: 3rem;
+    border-radius: 20px;
+    
+    /* Adjusted for better text contrast */
+    background: rgba(255, 255, 255, 0.4); /* Made it more opaque */
+    backdrop-filter: blur(12px); /* Slightly less blur can help */
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Form Header - Dark text for high contrast */
+.form-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.brand-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a202c; /* CHANGED to a strong, dark charcoal color */
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: #4A5568; /* CHANGED to a softer dark gray */
+    margin-top: 0.5rem;
+}
+
+/* Input Fields - High contrast and clear placeholders */
+.input-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    
+    background: rgba(255, 255, 255, 0.5); /* Semi-opaque white */
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #2d3748; /* CHANGED to dark text for what you type */
+    transition: all 0.2s ease-in-out;
+}
+
+/* Style for the placeholder text itself */
+.input-group input::placeholder {
+    color: #718096; /* A clear but not-too-dark grey for placeholder */
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #2b6cb0; /* A nice blue focus ring */
+    background: #ffffff; /* Becomes solid white on focus */
+}
+
+/* Form Options & Links - Using a clickable blue */
+.form-options {
+    text-align: right;
+    margin-bottom: 1.5rem;
+}
+
+.forgot-password, .signup-link a {
+    font-size: 0.9rem;
+    color: #2b6cb0; /* CHANGED to a professional blue */
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.forgot-password:hover, .signup-link a:hover {
+    text-decoration: underline;
+}
+
+/* Main Login Button - Stronger Call to Action */
+.login-button {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #2b6cb0; /* CHANGED to solid blue */
+    color: #ffffff; /* CHANGED to white text */
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.login-button:hover {
+    background-color: #2c5282; /* Darker blue on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Separator - A soft gray */
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #a0aec0; /* A light grey for the "OR" text */
+    margin: 2rem 0;
+}
+
+.separator::before, .separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.separator span { padding: 0 1rem; }
+
+/* Social Login Buttons - Clear and readable */
+.social-logins {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.social-button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(255, 255, 255, 0.4);
+    color: #2d3748; /* CHANGED to dark text */
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.social-button:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Icons are visible in their original colors now */
+.social-button img, .social-button svg {
+    /* filter: invert(1) and opacity removed */
+}
+
+/* Sign Up Link */
+.signup-link {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.95rem;
+    color: #4a5568; /* Dark gray for better readability */
+}
+
+/* Django Message Banners (No changes needed, already high contrast) */
+.message-banner {
+    padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px;
+    font-weight: 500; text-align: center;
+}
+.message-banner.success { background-color: #c6f6d5; color: #2f855a; }
+.message-banner.error { background-color: #fed7d7; color: #c53030; }

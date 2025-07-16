@@ -1,29 +1,68 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | AlumniVConnect</title>
+    
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h2>Login</h2>
+    <div class="login-container">
+        <div class="login-form">
+            <div class="form-header">
+                <h1 class="brand-title">AlumiX⫘⫘Konnekt</h1>
+                <p class="subtitle">Welcome back! Please enter your details.</p>
+            </div>
 
-    {% if messages %}
-        <ul>
-        {% for message in messages %}
-            <li style="color:green;">{{ message }}</li>
-        {% endfor %}
-        </ul>
-    {% endif %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message-banner success">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
 
-    {% if error %}
-        <p style="color:red">{{ error }}</p>
-    {% endif %}
+            {% if error %}
+                <div class="message-banner error">{{ error }}</div>
+            {% endif %}
 
-    <form method="post">
-        {% csrf_token %}
-        Username: <input type="text" name="username"><br><br>
-        Password: <input type="password" name="password"><br><br>
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account? <a href="{% url 'register' %}">Sign up here</a></p>
+            <form method="post" class="main-form">
+                {% csrf_token %}
+                <div class="input-group">
+                    <!-- ADDED PLACEHOLDER -->
+                    <input type="text" id="username" name="username" required placeholder="Username">
+                </div>
+                <div class="input-group">
+                    <!-- ADDED PLACEHOLDER -->
+                    <input type="password" id="password" name="password" required placeholder="Password">
+                </div>
+                <div class="form-options">
+                    <a href="#" class="forgot-password">Forgot Password?</a>
+                </div>
+                <button type="submit" class="login-button">Sign In</button>
+            </form>
+
+            <div class="separator">
+                <span>OR</span>
+            </div>
+
+            <div class="social-logins">
+                 <button class="social-button">
+                    <img src="https://www.google.com/favicon.ico" alt="Google"> Continue with Google
+                </button>
+                <button class="social-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.925.016-2.115 1.287-2.115 1.27 0 1.475 1.002 1.475 2.05v3.91h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.32 0-1.99.72-2.316 1.408h.016V6.169h-2.4v7.225h2.4z"/></svg>
+                     Continue with LinkedIn
+                </button>
+            </div>
+
+            <div class="signup-link">
+                <p>Don't have an account? <a href="#">Sign up for free</a></p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
