@@ -9,19 +9,23 @@ def register_view(request):
         form = UserRegisterForm(request.POST)
         profile_form = ProfileForm(request.POST)
         if form.is_valid() and profile_form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
-            user.save()
+            # The form.save() now correctly creates the user and hashes the password!
+            user = form.save() 
+            
+            # We don't need to set the password manually anymore.
+            # user.set_password(form.cleaned_data['password']) <-- DELETE THIS LINE
+
             profile = profile_form.save(commit=False)
             profile.user = user
             profile.save()
-            messages.success(request, 'Registration successful! Please log in.')
+            
+            messages.success(request, 'Welcome aboard! Log in to access your account.')
             return redirect('login')
     else:
         form = UserRegisterForm()
         profile_form = ProfileForm()
+        
     return render(request, 'core/register.html', {'form': form, 'profile_form': profile_form})
-
 
 def login_view(request):
     if request.method == 'POST':
@@ -32,7 +36,7 @@ def login_view(request):
             login(request, user)
             return redirect('dashboard')  # Placeholder for now
         else:
-            return render(request, 'core/login.html', {'error': 'Invalid credentials'})
+            return render(request, 'core/login.html', {'error': 'Whoops! That didn’t work. Let’s try again.'})
     return render(request, 'core/login.html')
 
 def logout_view(request):

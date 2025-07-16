@@ -10,16 +10,17 @@ body, html {
 
 /* The main container holds the background image */
 .login-container {
-    height: 100vh;
+    min-height: 100vh; /* Allow it to grow taller than the screen */
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 3rem 2rem; /* Added more vertical padding for breathing room */
     box-sizing: border-box;
 
     background: url('../images/images.jpg') no-repeat center center;
     background-size: cover;
+    background-attachment: fixed; /* <-- BONUS: Keeps the background image fixed while you scroll, a very cool effect! */
 }
 
 /* The Frosted Glass Form - Now slightly more opaque for readability */
@@ -188,3 +189,70 @@ body, html {
 }
 .message-banner.success { background-color: #c6f6d5; color: #2f855a; }
 .message-banner.error { background-color: #fed7d7; color: #c53030; }
+
+/* --- STYLES FOR REGISTRATION PAGE --- */
+
+/* Style for Dropdown/Select Fields */
+.input-group select {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.5) url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234A5568%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.4-5.4-13z%22%2F%3E%3C%2Fsvg%3E') no-repeat right .75rem center/8px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #2d3748;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.input-group select:focus {
+    outline: none;
+    border-color: #2b6cb0;
+    background-color: #ffffff;
+}
+
+/* Style for Checkbox/Boolean Fields */
+.choice-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.choice-group label {
+    font-weight: 500;
+    color: #4A5568;
+}
+
+.choice-group input[type="checkbox"] {
+    height: 1.25em;
+    width: 1.25em;
+    cursor: pointer;
+}
+
+/* A simple divider to separate form sections */
+.form-divider {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+}
+
+/* --- STYLES FOR FIELD VALIDATION ERRORS --- */
+
+.field-error {
+    color: #c53030; /* A strong red color */
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding-left: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.field-error ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}```

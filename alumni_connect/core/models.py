@@ -2,15 +2,23 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Profile(models.Model):
-    USER_TYPE_CHOICES = (
+    USER_TYPE_CHOICES = [
         ('student', 'Student'),
         ('alumni', 'Alumni'),
-    )
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
     department = models.CharField(max_length=100)
-    graduation_year = models.IntegerField(null=True, blank=True)
-    is_verified = models.BooleanField(default=False)
+    graduation_year = models.PositiveIntegerField()
+    is_verified = models.BooleanField(default=False)  # If you're using it
+    job_title = models.CharField(max_length=100, blank=True, null=True)  # ✅
+    company_name = models.CharField(max_length=100, blank=True, null=True)  # ✅
+    currently_employed = models.BooleanField(default=False)
+    had_past_job = models.BooleanField(default=False)
+    past_job_title = models.CharField(max_length=100, blank=True, null=True)
+    past_company_name = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.user.username} ({self.user_type})"
+        return self.user.username
+
