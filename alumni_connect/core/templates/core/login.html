@@ -1,4 +1,6 @@
 {% load static %}
+{% load socialaccount %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,9 +23,10 @@
 
             {% if messages %}
                 {% for message in messages %}
-                    <div class="message-banner success">{{ message }}</div>
+                    <div class="message-banner {{ message.tags }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
+
 
             {% if error %}
                 <div class="message-banner error">{{ error }}</div>
@@ -50,12 +53,8 @@
             </div>
 
             <div class="social-logins">
-                 <button class="social-button">
+                 <button class="social-button" onclick="window.location.href='{% provider_login_url 'google' %}'">
                     <img src="https://www.google.com/favicon.ico" alt="Google"> Continue with Google
-                </button>
-                <button class="social-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.925.016-2.115 1.287-2.115 1.27 0 1.475 1.002 1.475 2.05v3.91h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.32 0-1.99.72-2.316 1.408h.016V6.169h-2.4v7.225h2.4z"/></svg>
-                     Continue with LinkedIn
                 </button>
             </div>
 

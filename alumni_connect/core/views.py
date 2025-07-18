@@ -3,6 +3,11 @@ from django.contrib.auth import authenticate, login, logout
 from .forms import UserRegisterForm, ProfileForm
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def dashboard_view(request):
+    return render(request, 'dashboard.html')
 
 def register_view(request):
     if request.method == 'POST':
@@ -19,7 +24,7 @@ def register_view(request):
             profile.user = user
             profile.save()
             
-            messages.success(request, 'Welcome aboard! Log in to access your account.')
+            messages.success(request, 'Welcome aboard! Sign in to access your account.')
             return redirect('login')
     else:
         form = UserRegisterForm()
