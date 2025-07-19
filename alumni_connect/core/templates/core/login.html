@@ -17,29 +17,24 @@
     <div class="login-container">
         <div class="login-form">
             <div class="form-header">
-                <h1 class="brand-title">AlumiX⫘⫘Konnekt</h1>
+                <h1 class="brand-title">AlumniVConnect</h1>
                 <p class="subtitle">Welcome back! Please enter your details.</p>
             </div>
 
+            <!-- This block displays messages from the backend -->
             {% if messages %}
                 {% for message in messages %}
                     <div class="message-banner {{ message.tags }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
 
-
-            {% if error %}
-                <div class="message-banner error">{{ error }}</div>
-            {% endif %}
-
             <form method="post" class="main-form">
                 {% csrf_token %}
                 <div class="input-group">
-                    <!-- ADDED PLACEHOLDER -->
-                    <input type="text" id="username" name="username" required placeholder="Username">
+                    <!-- The placeholder now guides the user correctly -->
+                    <input type="text" id="login-identifier" name="username" required placeholder="Admission No. or Email">
                 </div>
                 <div class="input-group">
-                    <!-- ADDED PLACEHOLDER -->
                     <input type="password" id="password" name="password" required placeholder="Password">
                 </div>
                 <div class="form-options">
@@ -59,7 +54,7 @@
             </div>
 
             <div class="signup-link">
-                <p>Don't have an account?  <a href="{% url 'register' %}">Sign up for free</a></p>
+                <p>Don't have an account? <a href="{% url 'register' %}">Sign up for free</a></p>
             </div>
         </div>
     </div>

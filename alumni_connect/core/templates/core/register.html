@@ -1,5 +1,4 @@
 {% load static %}
-{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,88 +16,112 @@
         <div class="login-form">
             <div class="form-header">
                 <h1 class="brand-title">Join the Community</h1>
-                <p class="subtitle">Reunite. Connect. Thrive. Join AlumniVConnect now.</p>
+                <p class="subtitle">Create your account to connect and thrive.</p>
             </div>
-
-            <!-- This banner will now only show general form errors (rare) -->
-            {% if form.non_field_errors %}
-                <div class="message-banner error">
-                    {% for error in form.non_field_errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
 
             <form method="post" class="main-form">
                 {% csrf_token %}
                 
+                <!-- This will display global form errors like "Passwords do not match" -->
+                {% if form.non_field_errors %}
+                    <div class="message-banner error">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <!-- SECTION 1: USER ACCOUNT DETAILS -->
+                <div class="input-group">
+                    {{ form.full_name }}
+                    <div class="field-error">{{ form.full_name.errors }}</div>
+                </div>
+
+                <!-- ✅ THIS IS THE USERNAME FIELD THAT WAS MISSING. IT IS NOW CORRECTLY ADDED. -->
                 <div class="input-group">
                     {{ form.username }}
-                    <!-- NEW: Display field-specific errors -->
                     <div class="field-error">{{ form.username.errors }}</div>
                 </div>
+                
                 <div class="input-group">
                     {{ form.email }}
                     <div class="field-error">{{ form.email.errors }}</div>
                 </div>
+                
                 <div class="input-group">
                     {{ form.password }}
                     <div class="field-error">{{ form.password.errors }}</div>
                 </div>
+                
                 <div class="input-group">
-                    {{ form.confirm_password }}
-                    <div class="field-error">{{ form.confirm_password.errors }}</div>
+                    {{ form.password2 }}
+                    <div class="field-error">{{ form.password2.errors }}</div>
                 </div>
                 
                 <hr class="form-divider">
                 
-                <div class="input-group">{{ profile_form.user_type }}</div>
-                <div class="input-group">{{ profile_form.department }}</div>
-                <div class="input-group">{{ profile_form.graduation_year }}</div>
+                <!-- SECTION 2: PROFILE DETAILS -->
+                <div class="input-group">
+                    {{ form.user_type }}
+                    <div class="field-error">{{ form.user_type.errors }}</div>
+                </div>
+                
+                <div class="input-group">
+                    {{ form.department }}
+                    <div class="field-error">{{ form.department.errors }}</div>
+                </div>
+                
+                <div class="input-group">
+                    {{ form.graduation_year }}
+                    <div class="field-error">{{ form.graduation_year.errors }}</div>
+                </div>
 
+                <!-- SECTION 3: ALUMNI-SPECIFIC JOB DETAILS (Dynamically shown) -->
                 <div id="alumni-fields" style="display:none;">
+                    <hr class="form-divider">
+                    
                     <div class="choice-group">
-                        <label for="id_currently_employed">Do you currently have a job?</label>
-                        {{ profile_form.currently_employed }}
+                        <label for="{{ form.currently_employed.id_for_label }}">Are you currently employed?</label>
+                        {{ form.currently_employed }}
                     </div>
+                    
                     <div id="current-job-fields" style="display:none;">
-                        <div class="input-group">{{ profile_form.job_title }}</div>
-                        <div class="input-group">{{ profile_form.company_name }}</div>
+                        <div class="input-group">{{ form.job_title }}</div>
+                        <div class="input-group">{{ form.company_name }}</div>
                     </div>
+
                     <div id="past-job-question" style="display:none;">
                         <div class="choice-group">
-                            <label for="id_had_past_job">Did you have a job in the past?</label>
-                            {{ profile_form.had_past_job }}
+                            <label for="{{ form.had_past_job.id_for_label }}">Have you had a job in the past?</label>
+                            {{ form.had_past_job }}
                         </div>
                         <div id="past-job-fields" style="display:none;">
-                            <div class="input-group">{{ profile_form.past_job_title }}</div>
-                            <div class="input-group">{{ profile_form.past_company_name }}</div>
+                            <div class="input-group">{{ form.past_job_title }}</div>
+                            <div class="input-group">{{ form.past_company_name }}</div>
                         </div>
                     </div>
                 </div>
                 
-                <button type="submit" class="login-button">Register</button>
+                <button type="submit" class="login-button">Create Account</button>
             </form>
 
             <div class="signup-link">
-                <p>Already have an account? <a href="{% url 'login' %}">Sign in here</a></p>
+                <p>Already have an account? <a href="{% url 'login' %}">Sign In</a></p>
             </div>
         </div>
     </div>
 
-    <!-- ALL JAVASCRIPT GOES AT THE END OF THE BODY -->
+    <!-- JavaScript for dynamic form fields -->
     <script>
     function toggleAlumniFields() {
-        const userType = document.getElementById("id_user_type").value;
+        const userTypeSelect = document.getElementById("id_user_type");
+        if (!userTypeSelect) return;
         const alumniFields = document.getElementById("alumni-fields");
-        alumniFields.style.display = userType === "alumni" ? "block" : "none";
+        alumniFields.style.display = userTypeSelect.value === "alumni" ? "block" : "none";
     }
 
     function toggleEmploymentFields() {
         const employedCheckbox = document.getElementById("id_currently_employed");
         const hadPastJobCheckbox = document.getElementById("id_had_past_job");
-        
-        if (!employedCheckbox) return;
+        if (!employedCheckbox || !hadPastJobCheckbox) return;
 
         const currentJobFields = document.getElementById("current-job-fields");
         const pastJobQuestion = document.getElementById("past-job-question");
@@ -108,18 +131,10 @@
             currentJobFields.style.display = "block";
             pastJobQuestion.style.display = "none";
             pastJobFields.style.display = "none";
-            // Auto-scroll to the new fields
-            currentJobFields.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
             currentJobFields.style.display = "none";
             pastJobQuestion.style.display = "block";
-            
-            const showPastFields = hadPastJobCheckbox && hadPastJobCheckbox.checked;
-            pastJobFields.style.display = showPastFields ? "block" : "none";
-            if (showPastFields) {
-                // Auto-scroll to the new fields
-                pastJobFields.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+            pastJobFields.style.display = hadPastJobCheckbox.checked ? "block" : "none";
         }
     }
 
@@ -127,17 +142,20 @@
         toggleAlumniFields();
         toggleEmploymentFields();
 
-        document.getElementById("id_user_type").addEventListener("change", function() {
-            toggleAlumniFields();
-            toggleEmploymentFields(); 
-        });
-
-        document.body.addEventListener('change', function(event) {
+        const userTypeSelect = document.getElementById("id_user_type");
+        if (userTypeSelect) {
+            userTypeSelect.addEventListener("change", () => {
+                toggleAlumniFields();
+                toggleEmploymentFields(); 
+            });
+        }
+        
+        document.body.addEventListener('change', event => {
             if (event.target.id === 'id_currently_employed' || event.target.id === 'id_had_past_job') {
                 toggleEmploymentFields();
             }
         });
     });
-</script>
+    </script>
 </body>
 </html>

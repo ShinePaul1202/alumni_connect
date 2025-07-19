@@ -281,3 +281,168 @@ body, html {
     color: #856404;
     border: 1px solid #ffeeba;
 }
+
+/* ===== STYLES FOR THE DASHBOARD            ===== */
+/* ============================================= */
+
+/* --- Main Layout Grid --- */
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 260px 1fr; /* Sidebar width and main content */
+    grid-template-rows: auto 1fr; /* Top bar height and main area */
+    height: 100vh;
+    background-color: #f7fafc; /* A very light gray background */
+}
+
+/* --- Sidebar Styling --- */
+.sidebar {
+    grid-row: 1 / -1; /* Span all rows */
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+.sidebar-header .brand-title {
+    font-size: 1.5rem; color: #2b6cb0;
+}
+.sidebar-nav ul {
+    list-style: none; padding: 1.5rem 0; margin: 0;
+}
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.5rem;
+    color: #4A5568;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.sidebar-nav a:hover, .sidebar-nav li.active a {
+    background-color: #ebf8ff;
+    color: #2b6cb0;
+    border-right: 3px solid #2b6cb0;
+}
+.sidebar-nav i {
+    width: 20px; text-align: center;
+}
+
+/* --- Main Content Area --- */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* --- Top Bar Styling --- */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+}
+.search-bar {
+    position: relative;
+    color: #a0aec0;
+}
+.search-bar input {
+    padding: 0.6rem 0.6rem 0.6rem 2.5rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e0;
+    width: 300px;
+    font-size: 0.95rem;
+}
+.search-bar .fa-search {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.user-info .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+}
+.user-profile-dropdown {
+    position: relative; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;
+}
+.user-profile-dropdown .user-name {
+    font-weight: 600;
+}
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 120%; right: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 200px;
+    z-index: 100;
+}
+.user-profile-dropdown:hover .dropdown-menu { display: block; }
+.dropdown-menu a {
+    display: block; padding: 0.75rem 1.5rem; color: #4A5568; text-decoration: none;
+}
+.dropdown-menu a:hover { background-color: #f7fafc; }
+.dropdown-menu .logout-link { color: #c53030; font-weight: 500; }
+
+/* --- Page Content Styling --- */
+.page-content {
+    padding: 2rem;
+}
+.content-header h1 {
+    font-size: 2rem; margin-bottom: 0.5rem; color: #2d3748;
+}
+.content-header p {
+    color: #718096; margin-top: 0;
+}
+
+/* --- Stats Cards Styling --- */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+.card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+.card-icon {
+    font-size: 2rem;
+    padding: 0.8rem;
+    border-radius: 8px;
+    color: #fff;
+}
+.card:nth-child(1) .card-icon { background-color: #4299e1; } /* Blue */
+.card:nth-child(2) .card-icon { background-color: #48bb78; } /* Green */
+.card:nth-child(3) .card-icon { background-color: #ed8936; } /* Orange */
+.card:nth-child(4) .card-icon { background-color: #9f7aea; } /* Purple */
+.card-info h3 {
+    margin: 0; font-size: 1.75rem;
+}
+.card-info p {
+    margin: 0; color: #718096;
+}
+
+/* --- Main Content Block Styling --- */
+.content-block {
+    margin-top: 2.5rem;
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+.content-block h2 {
+    margin-top: 0;
+}
+
