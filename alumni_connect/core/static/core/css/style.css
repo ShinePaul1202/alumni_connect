@@ -247,3 +247,155 @@ body, html {
     border-radius: 20px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;
 }
 .connect-btn:hover { background-color: var(--primary-blue); color: var(--background-white); }
+
+/* ============================================= */
+/* ===== STYLES FOR PROFILE UPDATE PAGE      ===== */
+/* ============================================= */
+
+.profile-page-container {
+    background: linear-gradient(170deg, #f7fafc 0%, #edf2f7 100%);
+    min-height: 100vh;
+    padding: 3rem 2rem;
+    box-sizing: border-box;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 2.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- Left Column: Profile Card --- */
+.profile-card {
+    background-color: var(--background-white);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    text-align: center;
+    align-self: start;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+.profile-card:hover { box-shadow: var(--shadow-md); }
+
+.profile-card .card-header { text-align: left; margin-bottom: 1.5rem; }
+.profile-card .back-link { text-decoration: none; color: var(--text-light); font-weight: 500; transition: color 0.2s ease; }
+.profile-card .back-link:hover { color: var(--primary-blue); }
+.profile-card .back-link i { margin-right: 0.5rem; }
+
+.avatar-upload-wrapper {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 1.5rem auto;
+    cursor: pointer;
+}
+
+.profile-avatar-large {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid var(--background-white);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+    transition: transform 0.3s ease;
+}
+
+.avatar-upload-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    border-radius: 50%;
+    background-color: rgba(45, 55, 72, 0.7);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Allows clicks to pass through if needed, but wrapper has cursor */
+}
+.avatar-upload-wrapper:hover .avatar-upload-overlay { opacity: 1; }
+.avatar-upload-wrapper:hover .profile-avatar-large { transform: scale(1.05); }
+.avatar-upload-overlay i { font-size: 2rem; }
+.avatar-upload-overlay span { font-weight: 500; margin-top: 0.5rem; }
+.avatar-upload-wrapper input[type="file"] { display: none; }
+
+.profile-card h3 { margin: 0.5rem 0 0.25rem; color: var(--text-dark); font-size: 1.6rem; }
+.profile-card .user-email { margin: 0; color: var(--text-light); font-size: 1rem; }
+
+/* --- Right Column: Form Section --- */
+.profile-form-section {
+    background-color: var(--background-white);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 2.5rem 3rem;
+}
+
+.profile-form-section h2 { margin-top: 0; font-size: 1.8rem; font-weight: 700; color: var(--text-dark); }
+.profile-form-section .form-subtitle { margin-top: -0.25rem; margin-bottom: 2rem; color: var(--text-light); }
+
+fieldset.form-group {
+    border: 1px solid var(--border-color);
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2.5rem;
+}
+fieldset.form-group legend {
+    padding: 0 0.75rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+    font-size: 1.1rem;
+}
+
+.field-wrapper { margin-bottom: 1.25rem; }
+.field-wrapper label { display: block; margin-bottom: 0.5rem; color: var(--text-dark); font-weight: 500; }
+.field-wrapper input, .field-wrapper select, .field-wrapper textarea {
+    width: 100%; padding: 0.8rem 1rem; font-size: 1rem; font-family: 'Poppins', sans-serif;
+    border-radius: 8px; border: 1px solid #cbd5e0; box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.field-wrapper input:focus, .field-wrapper select:focus, .field-wrapper textarea:focus {
+    outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 3px var(--primary-blue-light);
+}
+.field-wrapper textarea { min-height: 120px; resize: vertical; }
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: #f7fafc;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+}
+.checkbox-wrapper label { margin-bottom: 0; font-weight: 500; }
+.checkbox-wrapper input[type="checkbox"] { width: 1.25em; height: 1.25em; accent-color: var(--primary-blue); }
+
+.conditional-fields {
+    padding-left: 1rem;
+    margin-top: 1rem;
+    border-left: 3px solid var(--primary-blue-light);
+    display: none; /* Hidden by default, JS will manage this */
+}
+
+.form-actions { text-align: right; margin-top: 1rem; }
+.save-button {
+    padding: 0.9rem 2.25rem; border: none; border-radius: 8px;
+    background-color: var(--primary-blue); color: #ffffff;
+    font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+}
+.save-button:hover { background-color: #2c5282; transform: scale(1.03) translateY(-2px); box-shadow: 0 8px 25px rgba(43, 108, 176, 0.25); }
+
+/* Responsive */
+@media (max-width: 992px) {
+    .profile-grid { grid-template-columns: 1fr; }
+    .profile-form-section { padding: 2rem; }
+}
+
+/* Add this new rule to hide the default widget's text */
+.hidden-file-input {
+    display: none;
+}

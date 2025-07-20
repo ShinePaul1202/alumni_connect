@@ -50,12 +50,22 @@ class RegistrationForm(forms.Form):
 
 # --- ADD THIS NEW FORM CLASS FOR PROFILE UPDATING ---
 class ProfileUpdateForm(forms.ModelForm):
+    # These fields from the model will now be controlled by our form
+    currently_employed = forms.BooleanField(required=False, label="I am currently employed")
+    had_past_job = forms.BooleanField(required=False, label="I have past work experience")
+    
     class Meta:
         model = Profile
+        # Include ALL the fields we want to edit
         fields = [
-            'avatar', 'full_name', 'bio', 'department', 
-            'graduation_year', 'job_title', 'company_name'
+            'avatar', 'full_name', 'bio', 'department', 'graduation_year',
+            'currently_employed', 'job_title', 'company_name',
+            'had_past_job', 'past_job_title', 'past_company_name'
         ]
         widgets = {
-            'bio': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Tell us a little about yourself...'}),
+            'bio': forms.Textarea(attrs={'rows': 4, 'placeholder': 'A short bio to appear on your profile...'}),
+            'job_title': forms.TextInput(attrs={'placeholder': 'e.g., Software Engineer'}),
+            'company_name': forms.TextInput(attrs={'placeholder': 'e.g., Google'}),
+            'past_job_title': forms.TextInput(attrs={'placeholder': 'e.g., Intern'}),
+            'past_company_name': forms.TextInput(attrs={'placeholder': 'e.g., Microsoft'}),
         }

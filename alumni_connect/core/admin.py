@@ -1,75 +1,99 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from .models import Profile
 
-@admin.action(description='Verify selected users')
-def verify_selected_users(modeladmin, request, queryset):
-    """
-    Custom admin action to mark selected profiles as verified.
-    """
-    queryset.update(is_verified=True)
+# First, unregister the old User admin to make way for our custom one.
+admin.site.unregister(User)
 
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
+@admin.action(description='Verify selected user profiles')
+def verify_selected_profiles(modeladmin, request, queryset):
     """
-    Customizes the admin interface for the Profile model.
+    Custom action to verify the profiles associated with the selected users.
     """
-    
-    # --- Columns to display in the main list view ---
+    profile_ids = queryset.values_list('profile__id', flat=True)
+    Profile.objects.filter(id__in=profile_ids).update(is_verified=True)
+
+# This is our new, powerful User admin that combines User and Profile.
+@admin.register(User)
+class CustomUserAdmin(BaseUserAdmin):
+    """
+    A custom User admin that displays Profile information and allows powerful filtering.
+    """
+
+    # --- LIST VIEW CONFIGURATION (with Graduation Year) ---
     list_display = (
-        'full_name',
-        'user',
-        'is_verified',
-        'user_type',
-        'department',
-        'graduation_year',
-        'currently_employed',
-        'had_past_job',
+        'username',
+        'email',
+        'get_full_name',
+        'get_is_verified',
+        'get_user_type',
+        'get_department',
+        'get_graduation_year', # CORRECTED: Added this field back
+        'is_staff',
     )
 
-    # --- Search functionality ---
-    # This adds a search bar at the top of the admin page.
-    search_fields = (
-        'full_name',          # Search by the user's real name
-        'user__username',     # Search by the unique username
-        'user__email',        # Search by email address
-        'department',         # Search by department
-        'graduation_year',    # Search by graduation year
-    )
-
-    # --- Filter functionality ---
-    # ✅ THIS IS THE SECTION THAT ANSWERS YOUR QUESTION.
-    # It adds the filter sidebar on the right.
+    # --- FILTER AND SEARCH (with Graduation Year) ---
     list_filter = (
-        # Filter by boolean fields (Yes/No options)
-        'is_verified',
-        'currently_employed',
-        'had_past_job',
-
-        # Filter by choice fields (Dropdown of choices)
-        'user_type',
-        'department',
-
-        # Filter by a numeric field (Will show options like 'Any date', 'Today', 'Past 7 days', etc. for dates, or ranges for numbers)
-        'graduation_year',
+        'is_staff',
+        'is_superuser',
+        'is_active',
+        'groups',
+        'profile__is_verified',
+        'profile__user_type',
+        'profile__department',
+        'profile__graduation_year', # CORRECTED: Added this field back
+        'profile__currently_employed',
+        'profile__had_past_job',
     )
-
-    # --- Custom Actions ---
-    # This adds the "Verify selected users" option to the "Actions" dropdown.
-    actions = [verify_selected_users]
-
-    # --- Customize the Profile Edit Page ---
-    # This organizes the fields into logical sections when you edit a profile.
-    fieldsets = (
-        ('Account Information', {
-            'fields': ('user', 'full_name', 'is_verified')
-        }),
-        ('Academic Details', {
-            'fields': ('user_type', 'department', 'graduation_year')
-        }),
-        ('Professional History', {
-            'fields': ('currently_employed', 'job_title', 'company_name', 'had_past_job', 'past_job_title', 'past_company_name')
-        }),
+    search_fields = (
+        'username',
+        'email',
+        'profile__full_name',
+        'profile__department',
     )
     
-    # Make the 'user' field non-editable on the profile page to prevent accidental changes.
-    readonly_fields = ('user',)
+    # --- ACTIONS ---
+    actions = [verify_selected_profiles]
+
+    # --- PROFILE EDITING (The "Inline" part) ---
+    class ProfileInline(admin.StackedInline):
+        model = Profile
+        can_delete = False
+        verbose_name_plural = 'User Profile'
+        fk_name = 'user'
+        fieldsets = (
+            (None, {'fields': ('avatar', 'full_name', 'bio')}),
+            ('Academic & Professional Details', {'fields': ('user_type', 'department', 'graduation_year', 'is_verified')}),
+            ('Work Experience', {'fields': ('currently_employed', 'job_title', 'company_name', 'had_past_job', 'past_job_title', 'past_company_name')}),
+        )
+
+    inlines = (ProfileInline,)
+
+    # --- Helper methods to get data from the related Profile ---
+    def get_full_name(self, instance):
+        return instance.profile.full_name
+    get_full_name.short_description = 'Full Name'
+
+    def get_is_verified(self, instance):
+        return instance.profile.is_verified
+    get_is_verified.short_description = 'Verified'
+    get_is_verified.boolean = True
+
+    def get_user_type(self, instance):
+        return instance.profile.user_type
+    get_user_type.short_description = 'User Type'
+
+    def get_department(self, instance):
+        return instance.profile.department
+    get_department.short_description = 'Department'
+
+    # CORRECTED: Added the helper method for graduation year
+    def get_graduation_year(self, instance):
+        return instance.profile.graduation_year
+    get_graduation_year.short_description = 'Grad Year'
+
+    def get_inline_instances(self, request, obj=None):
+        if not obj:
+            return list()
+        return super(CustomUserAdmin, self).get_inline_instances(request, obj)

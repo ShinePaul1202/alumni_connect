@@ -24,7 +24,7 @@
         <!-- ===== SIDEBAR NAVIGATION ===== -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2 class="brand-title"><i class="fas fa-graduation-cap"></i> AlumniConnect</h2>
+                <h2 class="brand-title"><i class="fas fa-graduation-cap"></i> AluLink</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul>
@@ -57,7 +57,7 @@
                         <img src="{{ request.user.profile.avatar.url }}?v={% now "U" %}" alt="Avatar" class="avatar">   
                         <div class="dropdown-menu">
                             <a href="{% url 'profile_update' %}">My Profile</a>
-                            <a href="#">Account Settings</a>
+                            <a href="{% url 'password_change' %}">Account Settings</a>
                             <div class="dropdown-divider"></div>
                             <a href="{% url 'logout' %}" class="logout-link">Logout</a>
                         </div>

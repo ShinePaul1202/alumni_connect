@@ -1,77 +1,142 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Profile | AlumniConnect</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f7fafc; margin: 0; }
-        .container { display: flex; justify-content: center; align-items: flex-start; padding: 3rem 1rem; }
-        .form-wrapper { background: #fff; padding: 2rem 2.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 700px; }
-        .form-wrapper h2 { text-align: center; color: #2d3748; margin-top:0; margin-bottom: 2rem; font-size: 1.75rem;}
-        form p { margin-bottom: 1.25rem; }
-        form label { display: block; margin-bottom: 0.5rem; color: #4A5568; font-weight: 600; font-size: 0.9rem; }
-        form input[type="text"], form input[type="number"], form textarea, form select {
-            width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #cbd5e0;
-            box-sizing: border-box; font-size: 1rem; font-family: 'Poppins', sans-serif;
-        }
-        form input[type="file"] { border: none; padding: 0; }
-        .current-avatar-wrapper { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-        .current-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
-        .button-group { display: flex; gap: 1rem; margin-top: 2rem; }
-        .update-button { flex-grow: 1; padding: 0.8rem; border: none; border-radius: 8px; background-color: #2b6cb0; color: #ffffff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
-        .update-button:hover { background-color: #2c5282; }
-        .cancel-link { display: block; text-align: center; padding: 0.8rem; border-radius: 8px; background-color: #e2e8f0; color: #2d3748; text-decoration: none; font-weight: 600; }
-        .message-banner { padding: 10px 15px; margin-bottom: 15px; border-radius: 5px; font-weight: 500; }
-        .message-banner.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Add the enctype for file uploads -->
-        <form method="POST" enctype="multipart/form-data" class="form-wrapper">
-            <h2>Edit Your Profile</h2>
-            {% csrf_token %}
-
-            <div class="current-avatar-wrapper">
-                <img src="{{ request.user.profile.avatar.url }}?v={% now "U" %}" alt="Avatar" class="avatar">   
-                <div>
-                    <label for="{{ form.avatar.id_for_label }}">Change Profile Picture</label>
-                    {{ form.avatar }}
-                </div>
-            </div>
+    <div class="profile-page-container">
+        <div class="profile-grid">
             
-            <p>
-                <label for="{{ form.full_name.id_for_label }}">Full Name</label>
-                {{ form.full_name }}
-            </p>
-            <p>
-                <label for="{{ form.bio.id_for_label }}">Bio</label>
-                {{ form.bio }}
-            </p>
-            <p>
-                <label for="{{ form.department.id_for_label }}">Department</label>
-                {{ form.department }}
-            </p>
-            <p>
-                <label for="{{ form.graduation_year.id_for_label }}">Graduation Year</label>
-                {{ form.graduation_year }}
-            </p>
-            <p>
-                <label for="{{ form.job_title.id_for_label }}">Current Job Title</label>
-                {{ form.job_title }}
-            </p>
-            <p>
-                <label for="{{ form.company_name.id_for_label }}">Current Company</label>
-                {{ form.company_name }}
-            </p>
+            <!-- ===== LEFT COLUMN: PROFILE CARD ===== -->
+            <aside class="profile-card">
+                <div class="card-header">
+                    <a href="{% url 'dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
+                </div>
+                <div class="card-body">
+                    <!-- The new, interactive avatar upload area -->
+                    <div class="avatar-upload-wrapper">
+                        <img src="{{ form.instance.avatar.url }}?v={% now "U" %}" alt="Current Avatar" id="avatar-preview" class="profile-avatar-large">
+                        <div class="avatar-upload-overlay">
+                            <i class="fas fa-camera"></i>
+                            <span>Change Photo</span>
+                        </div>
+    
+                        <!-- This div will hold the functional input but will be completely hidden -->
+                        <div class="hidden-file-input">
+                            {{ form.avatar }}
+                         </div>
+                    </div>
+                    
+                    <h3>{{ form.instance.full_name }}</h3>
+                    <p class="user-email">{{ request.user.email }}</p>
+                </div>
+            </aside>
 
-            <div class="button-group">
-                <button type="submit" class="update-button">Update Profile</button>
-                <a href="{% url 'dashboard' %}" class="cancel-link">Cancel</a>
-            </div>
-        </form>
+            <!-- ===== RIGHT COLUMN: EDITING FORM ===== -->
+            <main class="profile-form-section">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <h2>Account Settings</h2>
+                    <p class="form-subtitle">Update your profile information.</p>
+                    
+                    <!-- Personal Info Fieldset -->
+                    <fieldset class="form-group">
+                        <legend>Personal Information</legend>
+                        <div class="field-wrapper">
+                            <label for="{{ form.full_name.id_for_label }}">Full Name</label>
+                            {{ form.full_name }}
+                        </div>
+                        <div class="field-wrapper">
+                            <label for="{{ form.bio.id_for_label }}">Bio / About Me</label>
+                            {{ form.bio }}
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Professional History Fieldset -->
+                    <fieldset class="form-group">
+                        <legend>Professional & Academic History</legend>
+                         <div class="field-wrapper">
+                            <label for="{{ form.department.id_for_label }}">Department</label>
+                            {{ form.department }}
+                        </div>
+                        <div class="field-wrapper">
+                            <label for="{{ form.graduation_year.id_for_label }}">Graduation Year</label>
+                            {{ form.graduation_year }}
+                        </div>
+                        
+                        <!-- Current Job Section (Conditional) -->
+                        <div class="checkbox-wrapper">{{ form.currently_employed.label_tag }} {{ form.currently_employed }}</div>
+                        <div class="conditional-fields" id="current-job-fields">
+                            <div class="field-wrapper"><label for="{{ form.job_title.id_for_label }}">Current Job Title</label>{{ form.job_title }}</div>
+                            <div class="field-wrapper"><label for="{{ form.company_name.id_for_label }}">Current Company</label>{{ form.company_name }}</div>
+                        </div>
+
+                        <!-- Past Job Section (Conditional) -->
+                        <div class="checkbox-wrapper">{{ form.had_past_job.label_tag }} {{ form.had_past_job }}</div>
+                        <div class="conditional-fields" id="past-job-fields">
+                             <div class="field-wrapper"><label for="{{ form.past_job_title.id_for_label }}">Past Job Title</label>{{ form.past_job_title }}</div>
+                             <div class="field-wrapper"><label for="{{ form.past_company_name.id_for_label }}">Past Company</label>{{ form.past_company_name }}</div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="save-button">Save All Changes</button>
+                    </div>
+                </form>
+            </main>
+        </div>
     </div>
+
+    <!-- ===== JAVASCRIPT LOGIC ===== -->
+    <script>
+        // --- Avatar Preview Logic ---
+        const avatarInput = document.getElementById('id_avatar');
+        const avatarPreview = document.getElementById('avatar-preview');
+        const avatarUploadWrapper = document.querySelector('.avatar-upload-wrapper');
+
+        // Trigger the hidden file input when the user clicks the avatar area
+        avatarUploadWrapper.addEventListener('click', () => {
+            avatarInput.click();
+        });
+
+        // When a new file is chosen, read it and display it as the preview
+        avatarInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    avatarPreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Conditional Job Fields Logic ---
+        const currentlyEmployedCheckbox = document.getElementById('id_currently_employed');
+        const hadPastJobCheckbox = document.getElementById('id_had_past_job');
+        const currentJobFields = document.getElementById('current-job-fields');
+        const pastJobFields = document.getElementById('past-job-fields');
+
+        function toggleJobFields() {
+            currentJobFields.style.display = currentlyEmployedCheckbox.checked ? 'block' : 'none';
+            pastJobFields.style.display = hadPastJobCheckbox.checked ? 'block' : 'none';
+        }
+
+        // Add event listeners to checkboxes
+        currentlyEmployedCheckbox.addEventListener('change', toggleJobFields);
+        hadPastJobCheckbox.addEventListener('change', toggleJobFields);
+
+        // Run on page load to set the initial state
+        document.addEventListener('DOMContentLoaded', toggleJobFields);
+    </script>
 </body>
 </html>

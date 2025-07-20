@@ -4,31 +4,70 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
-from .forms import RegistrationForm, ProfileUpdateForm # Import both forms
+from .forms import RegistrationForm, ProfileUpdateForm
 from .models import Profile
 
+# --- THIS VIEW HAS BEEN CORRECTED ---
 def register_view(request):
-    # (Your existing register_view code... no changes needed here)
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            full_name = form.cleaned_data['full_name']
-            username = form.cleaned_data['username']
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password']
-            user = User.objects.create(username=username, email=email, password=make_password(password))
-            Profile.objects.create(
-                user=user, full_name=full_name, user_type=form.cleaned_data['user_type'],
-                department=form.cleaned_data['department'], graduation_year=form.cleaned_data['graduation_year']
+            # Get data from the validated form
+            data = form.cleaned_data
+            full_name = data['full_name']
+            username = data['username']
+            email = data['email']
+            password = data['password']
+
+            # --- START OF NEW LOGIC ---
+            # Smartly determine if the job checkboxes should be ticked
+            currently_employed = bool(data['job_title'] or data['company_name'])
+            had_past_job = bool(data['past_job_title'] or data['past_company_name'])
+            # --- END OF NEW LOGIC ---
+
+            # Create the user with the username they provided
+            user = User.objects.create(
+                username=username,
+                email=email,
+                password=make_password(password)
             )
+
+            # --- START OF CORRECTED PROFILE CREATION ---
+            # Create the associated profile, now including ALL job fields
+            Profile.objects.create(
+                user=user,
+                full_name=full_name,
+                user_type=data['user_type'],
+                department=data['department'],
+                graduation_year=data['graduation_year'],
+                
+                # Save the job data to the database
+                currently_employed=currently_employed,
+                job_title=data['job_title'],
+                company_name=data['company_name'],
+                
+                had_past_job=had_past_job,
+                past_job_title=data['past_job_title'],
+                past_company_name=data['past_company_name']
+            )
+            # --- END OF CORRECTED PROFILE CREATION ---
+            
             messages.success(request, 'Welcome aboard! Please sign in to continue.')
             return redirect('login')
     else:
         form = RegistrationForm()
+        
     return render(request, 'core/register.html', {'form': form})
 
+# --- This new "home" view is for routing users correctly ---
+def home_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    else:
+        return redirect('login')
+
 def login_view(request):
-    # (Your existing login_view code... no changes needed here)
+    # (Your existing login_view code... no changes needed)
     if request.method == 'POST':
         identifier = request.POST.get('username')
         password = request.POST.get('password')
@@ -50,12 +89,13 @@ def login_view(request):
     return render(request, 'core/login.html')
 
 def logout_view(request):
+    # (Your existing logout_view code... no changes needed)
     logout(request)
     return redirect('login')
 
 @login_required
 def dashboard_view(request):
-    # (Your existing dashboard_view code... no changes needed here)
+    # (Your existing dashboard_view code... no changes needed)
     try:
         profile = request.user.profile
     except Profile.DoesNotExist:
@@ -75,11 +115,10 @@ def dashboard_view(request):
     }
     return render(request, 'core/dashboard.html', context)
 
-# --- ADD THIS ENTIRE NEW VIEW FOR UPDATING THE PROFILE ---
 @login_required
 def profile_update_view(request):
+    # (Your existing profile_update_view code... no changes needed)
     if request.method == 'POST':
-        # Pass request.POST for form data and request.FILES for image uploads
         form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
         if form.is_valid():
             form.save()
@@ -88,17 +127,6 @@ def profile_update_view(request):
         else:
             messages.error(request, 'Please correct the error below.')
     else:
-        # For a GET request, show the form pre-filled with the user's current data
         form = ProfileUpdateForm(instance=request.user.profile)
-
-    context = {
-        'form': form
-    }
+    context = {'form': form}
     return render(request, 'core/profile_update.html', context)
-
-# ADD THIS NEW VIEW
-def home_view(request):
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-    else:
-        return redirect('login')
