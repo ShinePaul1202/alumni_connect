@@ -147,23 +147,27 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SITE_ID = 1
-
+# === Allauth Settings ===
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-LOGIN_REDIRECT_URL = '/'
+SITE_ID = 1
+
+LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
 
-# Optional (you can customize)
-ACCOUNT_EMAIL_VERIFICATION = "none"  # or "mandatory"
-ACCOUNT_EMAIL_REQUIRED = True
-
-SOCIALACCOUNT_LOGIN_ON_GET=True
-
-LOGIN_REDIRECT_URL = '/dashboard/' 
-
+SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_ADAPTER = 'core.adapters.RestrictSocialLoginAdapter'
 
+# --- The modern way to handle these settings ---
+ACCOUNT_LOGIN_METHODS = ['username', 'email'] # Allow login with username OR email
+ACCOUNT_EMAIL_VERIFICATION = 'none'         # Don't require email verification for now
+ACCOUNT_UNIQUE_EMAIL = True                 # Enforce that every email address is unique
+ACCOUNT_SIGNUP_FIELDS = ['email', 'username'] # Specify fields needed for signup form logic
+# === End Allauth Settings ===
+
+# Media files (User Uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

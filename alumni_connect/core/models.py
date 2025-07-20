@@ -10,10 +10,14 @@ class Profile(models.Model):
     # Link to the User model
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
 
-    # ✅ ADD THIS FIELD TO STORE THE USER'S REAL NAME (NOT UNIQUE)
+    # Profile Picture and Bio
+    avatar = models.ImageField(default='avatars/default_avatar.png', upload_to='avatars/')
+    bio = models.TextField(blank=True, null=True)
+    
+    # User's real name
     full_name = models.CharField(max_length=150)
 
-    # Your existing profile fields
+    # Existing profile fields
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
     department = models.CharField(max_length=100)
     graduation_year = models.PositiveIntegerField(null=True, blank=True)
@@ -30,5 +34,4 @@ class Profile(models.Model):
     past_company_name = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
-        # Display the user's real name in the admin panel
         return self.full_name
