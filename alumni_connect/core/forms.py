@@ -1,7 +1,10 @@
+# C:\project\alumni_connect\core\forms.py
+
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile # Import the Profile model
+from .models import Profile
 
+# --- REGISTRATION FORM ---
 class RegistrationForm(forms.Form):
     DEPARTMENT_CHOICES = [
         ('', 'Select your Department'), 
@@ -10,14 +13,12 @@ class RegistrationForm(forms.Form):
         ('Mechanical Engineering', 'Mechanical Engineering'),
     ]
 
-    # --- User Account Fields ---
     full_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'placeholder': 'Your Full Name (e.g., Shine Paul)'}))
     username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'placeholder': 'Admission No.(no space needed)'}))
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'placeholder': 'Your Email Address'}))
     password = forms.CharField(required=True, widget=forms.PasswordInput(attrs={'placeholder': 'Create a Password'}), label="Password")
     password2 = forms.CharField(required=True, widget=forms.PasswordInput(attrs={'placeholder': 'Confirm Your Password'}), label="Confirm Password")
 
-    # --- Profile Fields ---
     user_type = forms.ChoiceField(choices=[('student', 'Student'), ('alumni', 'Alumni')], widget=forms.Select(attrs={'id': 'id_user_type'}))
     department = forms.ChoiceField(choices=DEPARTMENT_CHOICES)
     graduation_year = forms.IntegerField(required=True, widget=forms.NumberInput(attrs={'placeholder': 'Graduation Year'}))
@@ -48,33 +49,34 @@ class RegistrationForm(forms.Form):
             raise forms.ValidationError("An account with this email address already exists.")
         return email
 
-# --- ADD THIS NEW FORM CLASS FOR PROFILE UPDATING ---
+# --- FORM FOR UPDATING USER'S FIRST/LAST NAME ---
+class UserUpdateForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'placeholder': 'First Name'}))
+    last_name = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'placeholder': 'Last Name'}))
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name']
+
+# --- THIS IS THE CORRECTED FORM ---
 class ProfileUpdateForm(forms.ModelForm):
-    # These fields from the model will now be controlled by our form
-    currently_employed = forms.BooleanField(required=False, label="I am currently employed")
-    had_past_job = forms.BooleanField(required=False, label="I have past work experience")
-    
     class Meta:
         model = Profile
-        # Include ALL the fields we want to edit
-        fields = [
-            'avatar', 'full_name', 'bio', 'department', 'graduation_year',
-            'currently_employed', 'job_title', 'company_name',
-            'had_past_job', 'past_job_title', 'past_company_name'
-        ]
+        # We now use 'avatar' to match the model field name
+        fields = ['bio', 'avatar'] 
         widgets = {
-            'bio': forms.Textarea(attrs={'rows': 4, 'placeholder': 'A short bio to appear on your profile...'}),
-            'job_title': forms.TextInput(attrs={'placeholder': 'e.g., Software Engineer'}),
-            'company_name': forms.TextInput(attrs={'placeholder': 'e.g., Google'}),
-            'past_job_title': forms.TextInput(attrs={'placeholder': 'e.g., Intern'}),
-            'past_company_name': forms.TextInput(attrs={'placeholder': 'e.g., Microsoft'}),
+            'bio': forms.Textarea(attrs={'placeholder': 'A short bio to appear on your profile...'}),
+        }
+        labels = {
+            # We also update the label to refer to 'avatar'
+            'avatar': 'Change Profile Picture', 
         }
 
+# --- SETTINGS FORM ---
 class SettingsForm(forms.ModelForm):
     class Meta:
         model = Profile
-        # We'll use the fields we already added to the model
         fields = ['email_on_new_message']
         labels = {
             'email_on_new_message': 'Email me when I receive a new message',
-        }       
+        }

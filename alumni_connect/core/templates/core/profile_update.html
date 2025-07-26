@@ -4,7 +4,6 @@
 {% block title %}Update Profile | AluLink{% endblock %}
 
 {% block content %}
-<!-- Link to the dashboard stylesheet for a consistent look and feel -->
 <link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
 
 <body class="dashboard-body">
@@ -12,26 +11,18 @@
         <!-- ===== Sidebar ===== -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <!-- FIX #1: Added 'core:' namespace -->
                 <a href="{% url 'core:home' %}" class="brand-logo">
                     <i class="fa-solid fa-graduation-cap"></i>
                     <span>AluLink</span>
                 </a>
             </div>
             <nav class="sidebar-nav">
-                <!-- FIX #2: Added 'core:' namespace to BOTH dashboard links -->
                 <a href="{% if request.user.profile.user_type == 'student' %}{% url 'core:student_dashboard' %}{% else %}{% url 'core:alumni_dashboard' %}{% endif %}" class="nav-item">
                     <i class="fa-solid fa-table-columns"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#" class="nav-item">
-                    <i class="fa-solid fa-users"></i>
-                    <span>Find Alumni</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span>Messages</span>
-                </a>
+                <a href="#" class="nav-item"><i class="fa-solid fa-users"></i><span>Find Alumni</span></a>
+                <a href="#" class="nav-item"><i class="fa-solid fa-envelope"></i><span>Messages</span></a>
             </nav>
         </aside>
 
@@ -42,7 +33,7 @@
                     <h1 class="main-title">Edit Your Profile</h1>
                     <p class="main-subtitle">Keep your information up-to-date.</p>
                 </div>
-                 <!-- FIX #3: Added 'core:' namespace -->
+                 <!-- The cancel button now uses the improved btn-secondary style -->
                  <a href="{% url 'core:profile' %}" class="btn-secondary">
                     <i class="fa-solid fa-xmark" style="margin-right: 8px;"></i>
                     Cancel
@@ -50,44 +41,49 @@
             </header>
 
             <div class="form-container">
-                <!-- IMPORTANT: Add enctype for file uploads to work -->
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-
-                    <!-- Display non-field errors if any -->
-                    {% if form.non_field_errors %}
-                        <div class="form-errors">{{ form.non_field_errors }}</div>
-                    {% endif %}
                     
                     <div class="form-grid">
                         <!-- Personal Info Section -->
                         <div class="form-section">
                             <h3 class="form-section-title">Personal Info</h3>
-                            <div class="form-group">
-                                <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
-                                {{ form.full_name }}
-                                {% if form.full_name.errors %}<div class="field-errors">{{ form.full_name.errors }}</div>{% endif %}
+                            
+                            <div class="name-grid">
+                                <div class="form-group">
+                                    <label for="{{ u_form.first_name.id_for_label }}">First Name</label>
+                                    {{ u_form.first_name }}
+                                    {% if u_form.first_name.errors %}<div class="field-errors">{{ u_form.first_name.errors }}</div>{% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ u_form.last_name.id_for_label }}">Last Name</label>
+                                    {{ u_form.last_name }}
+                                    {% if u_form.last_name.errors %}<div class="field-errors">{{ u_form.last_name.errors }}</div>{% endif %}
+                                </div>
                             </div>
+                            
                             <div class="form-group">
-                                <label for="{{ form.bio.id_for_label }}">{{ form.bio.label }}</label>
-                                {{ form.bio }}
-                                {% if form.bio.errors %}<div class="field-errors">{{ form.bio.errors }}</div>{% endif %}
+                                <label for="{{ p_form.bio.id_for_label }}">Bio</label>
+                                {{ p_form.bio }}
+                                {% if p_form.bio.errors %}<div class="field-errors">{{ p_form.bio.errors }}</div>{% endif %}
                             </div>
                         </div>
 
-                        <!-- Avatar Section -->
+                        <!-- FIX #2 & #3: Avatar section with professional icon and working click -->
                         <div class="form-section">
                             <h3 class="form-section-title">Profile Picture</h3>
                             <div class="avatar-upload-group">
-                                {% if form.instance.image %}
-                                    <img src="{{ form.instance.image.url }}" alt="Current Avatar" class="current-avatar">
-                                {% else %}
-                                    <img src="{% static 'core/images/images.jpg' %}" alt="Default Avatar" class="current-avatar">
-                                {% endif %}
-                                <div class="avatar-field-wrapper">
-                                    {{ form.image }}
-                                    {% if form.image.errors %}<div class="field-errors">{{ form.image.errors }}</div>{% endif %}
-                                </div>
+                                <!-- The label's 'for' attribute now correctly points to the input's ID ('id_avatar') -->
+                                <label for="{{ p_form.avatar.id_for_label }}" class="avatar-label">
+                                    <img src="{% if p_form.instance.avatar %}{{ p_form.instance.avatar.url }}{% else %}{% static 'core/images/default.jpg' %}{% endif %}" alt="Avatar Preview" id="avatar-preview" class="current-avatar">
+                                    <!-- This is the new professional camera icon overlay -->
+                                    <div class="avatar-overlay">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </div>
+                                </label>
+                                <!-- The actual file input is hidden but triggered by the label -->
+                                <div style="display: none;">{{ p_form.avatar }}</div>
+                                {% if p_form.avatar.errors %}<div class="field-errors" style="text-align: center;">{{ p_form.avatar.errors }}</div>{% endif %}
                             </div>
                         </div>
                     </div>
@@ -99,9 +95,28 @@
             </div>
         </main>
     </div>
+
+    <!-- JavaScript to preview the image right after selecting it -->
+    <script>
+        // Ensure we are getting the correct input field by its Django-generated ID
+        const avatarInput = document.getElementById('{{ p_form.avatar.id_for_label }}');
+        const avatarPreview = document.getElementById('avatar-preview');
+
+        if (avatarInput) {
+            avatarInput.addEventListener('change', function(event) {
+                if (event.target.files && event.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        avatarPreview.src = e.target.result;
+                    }
+                    reader.readAsDataURL(event.target.files[0]);
+                }
+            });
+        }
+    </script>
 </body>
 
-<!-- Your styles are fine, no changes needed here -->
+
 <style>
 .form-container {
     background-color: var(--surface-color);
@@ -112,8 +127,13 @@
 .form-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 2rem;
+    gap: 3rem;
     margin-bottom: 2rem;
+}
+.name-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
 }
 .form-section-title {
     font-size: 1.1rem;
@@ -145,38 +165,86 @@
     min-height: 120px;
     resize: vertical;
 }
+
+/* FIX #2: Styles for the new professional avatar uploader */
 .avatar-upload-group {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    padding-top: 1rem;
+}
+.avatar-label {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    border-radius: 50%;
+    overflow: hidden; /* Important for keeping the overlay contained */
 }
 .current-avatar {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid var(--primary-color);
+    border: 4px solid var(--primary-color);
+    transition: filter 0.3s ease-in-out;
 }
-input[type="file"] {
-    color: transparent;
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none; /* Allows clicks to pass through to the label */
 }
+.avatar-overlay i {
+    color: white;
+    font-size: 2rem;
+}
+.avatar-label:hover .current-avatar {
+    filter: brightness(0.7);
+}
+.avatar-label:hover .avatar-overlay {
+    opacity: 1;
+}
+
 .field-errors {
     color: #e57373;
     font-size: 0.875rem;
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
 }
 .form-actions {
     margin-top: 2rem;
     text-align: right;
 }
+
+/* FIX #1: New professional style for the secondary/cancel button */
 .btn-secondary {
-    background-color: var(--surface-color);
-    color: var(--text-color);
-    border: 2px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    background-color: transparent; /* No background */
+    color: var(--secondary-color); /* Light text color */
+    border: 2px solid var(--border-color); /* Subtle border */
 }
 .btn-secondary:hover {
-    border-color: var(--text-color);
+    background-color: var(--surface-color); /* Darkens slightly on hover */
+    border-color: var(--secondary-color); /* Border brightens on hover */
+    color: var(--text-color);
+}
+
+@media (max-width: 768px) {
+    .form-grid, .name-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 
