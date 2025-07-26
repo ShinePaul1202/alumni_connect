@@ -1,0 +1,107 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Alumni Dashboard | AluLink{% endblock %}
+
+{% block content %}
+<!-- Link to the dashboard stylesheet to apply the new theme -->
+<link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
+
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <!-- ===== Sidebar ===== -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <!-- FIX #1: Added 'core:' namespace -->
+                <a href="{% url 'core:home' %}" class="brand-logo">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>AluLink</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <!-- FIX #2: Added 'core:' namespace -->
+                <a href="{% url 'core:alumni_dashboard' %}" class="nav-item active">
+                    <i class="fa-solid fa-table-columns"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Find Alumni</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Messages</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ===== Main Content ===== -->
+        <main class="main-content">
+            <!-- Header with Profile Dropdown -->
+            <header class="main-header">
+                <div class="main-header-text">
+                    <h1 class="main-title">Alumni Dashboard</h1>
+                    <p class="main-subtitle">Welcome, {{ request.user.first_name|default:request.user.username|title }}!</p>
+                </div>
+                <div class="profile-dropdown">
+                    <button class="profile-btn">
+                        <img src="{% if profile.image %}{{ profile.image.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="Profile Picture">
+                    </button>
+                    <div class="dropdown-content">
+                        <!-- FIX #3: Added 'core:' namespace -->
+                        <a href="{% url 'core:profile' %}"><i class="fa-solid fa-user"></i> My Profile</a>
+                        <a href="#"><i class="fa-solid fa-gear"></i> Account Settings</a>
+                        <hr>
+                        <!-- FIX #4: Added 'core:' namespace -->
+                        <a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Section -->
+            <section class="dashboard-section">
+                <h2 class="section-title">Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="card-icon alumni-icon"><i class="fa-solid fa-handshake"></i></div>
+                        <div class="card-info">
+                            <h3>0</h3>
+                            <p>Your Connections</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="card-icon messages-icon"><i class="fa-solid fa-paper-plane"></i></div>
+                        <div class="card-info">
+                            <h3>{{ student_message_count }}</h3>
+                            <p>Student Messages</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recently Joined Alumni Section - NOW SHOWS ALL DEPARTMENTS -->
+            <section class="dashboard-section">
+                 <h2 class="section-title">Recently Joined Alumni</h2> <!-- Title changed -->
+                 <div class="alumni-list">
+                    
+                    {% for alumni_profile in recent_alumni %} <!-- Loop variable changed -->
+                        <div class="alumni-card">
+                            <img src="{% if alumni_profile.image %}{{ alumni_profile.image.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="{{ alumni_profile.user.first_name }}">
+                            <div class="alumni-info">
+                                <h4>{{ alumni_profile.user.first_name }} {{ alumni_profile.user.last_name }}</h4>
+                                <!-- MODIFIED to show department, which is now important -->
+                                <p>{{ alumni_profile.department }} • {{ alumni_profile.job_title|default:"Position not listed" }}</p>
+                            </div>
+                            <a href="#" class="btn-primary">View Profile</a>
+                        </div>
+                    {% empty %}
+                        <!-- Empty message updated -->
+                        <p>No other alumni have joined recently.</p>
+                    {% endfor %}
+
+                 </div>
+            </section>
+        </main>
+    </div>
+</body>
+{% endblock %}

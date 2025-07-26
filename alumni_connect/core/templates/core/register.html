@@ -35,7 +35,6 @@
                     <div class="field-error">{{ form.full_name.errors }}</div>
                 </div>
 
-                <!-- ✅ THIS IS THE USERNAME FIELD THAT WAS MISSING. IT IS NOW CORRECTLY ADDED. -->
                 <div class="input-group">
                     {{ form.username }}
                     <div class="field-error">{{ form.username.errors }}</div>
@@ -104,7 +103,8 @@
             </form>
 
             <div class="signup-link">
-                <p>Already have an account? <a href="{% url 'login' %}">Sign In</a></p>
+                <!-- THE FIX: Added 'core:' namespace to the URL tag -->
+                <p>Already have an account? <a href="{% url 'core:login' %}">Sign In</a></p>
             </div>
         </div>
     </div>

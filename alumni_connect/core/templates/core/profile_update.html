@@ -1,142 +1,183 @@
+{% extends 'core/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile | AlumniConnect</title>
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
-<body>
-    <div class="profile-page-container">
-        <div class="profile-grid">
-            
-            <!-- ===== LEFT COLUMN: PROFILE CARD ===== -->
-            <aside class="profile-card">
-                <div class="card-header">
-                    <a href="{% url 'dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
+
+{% block title %}Update Profile | AluLink{% endblock %}
+
+{% block content %}
+<!-- Link to the dashboard stylesheet for a consistent look and feel -->
+<link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
+
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <!-- ===== Sidebar ===== -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <!-- FIX #1: Added 'core:' namespace -->
+                <a href="{% url 'core:home' %}" class="brand-logo">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>AluLink</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <!-- FIX #2: Added 'core:' namespace to BOTH dashboard links -->
+                <a href="{% if request.user.profile.user_type == 'student' %}{% url 'core:student_dashboard' %}{% else %}{% url 'core:alumni_dashboard' %}{% endif %}" class="nav-item">
+                    <i class="fa-solid fa-table-columns"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Find Alumni</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Messages</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ===== Main Form Content ===== -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="main-header-text">
+                    <h1 class="main-title">Edit Your Profile</h1>
+                    <p class="main-subtitle">Keep your information up-to-date.</p>
                 </div>
-                <div class="card-body">
-                    <!-- The new, interactive avatar upload area -->
-                    <div class="avatar-upload-wrapper">
-                        <img src="{{ form.instance.avatar.url }}?v={% now "U" %}" alt="Current Avatar" id="avatar-preview" class="profile-avatar-large">
-                        <div class="avatar-upload-overlay">
-                            <i class="fas fa-camera"></i>
-                            <span>Change Photo</span>
+                 <!-- FIX #3: Added 'core:' namespace -->
+                 <a href="{% url 'core:profile' %}" class="btn-secondary">
+                    <i class="fa-solid fa-xmark" style="margin-right: 8px;"></i>
+                    Cancel
+                </a>
+            </header>
+
+            <div class="form-container">
+                <!-- IMPORTANT: Add enctype for file uploads to work -->
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Display non-field errors if any -->
+                    {% if form.non_field_errors %}
+                        <div class="form-errors">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    
+                    <div class="form-grid">
+                        <!-- Personal Info Section -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">Personal Info</h3>
+                            <div class="form-group">
+                                <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+                                {{ form.full_name }}
+                                {% if form.full_name.errors %}<div class="field-errors">{{ form.full_name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.bio.id_for_label }}">{{ form.bio.label }}</label>
+                                {{ form.bio }}
+                                {% if form.bio.errors %}<div class="field-errors">{{ form.bio.errors }}</div>{% endif %}
+                            </div>
                         </div>
-    
-                        <!-- This div will hold the functional input but will be completely hidden -->
-                        <div class="hidden-file-input">
-                            {{ form.avatar }}
-                         </div>
+
+                        <!-- Avatar Section -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">Profile Picture</h3>
+                            <div class="avatar-upload-group">
+                                {% if form.instance.image %}
+                                    <img src="{{ form.instance.image.url }}" alt="Current Avatar" class="current-avatar">
+                                {% else %}
+                                    <img src="{% static 'core/images/images.jpg' %}" alt="Default Avatar" class="current-avatar">
+                                {% endif %}
+                                <div class="avatar-field-wrapper">
+                                    {{ form.image }}
+                                    {% if form.image.errors %}<div class="field-errors">{{ form.image.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <h3>{{ form.instance.full_name }}</h3>
-                    <p class="user-email">{{ request.user.email }}</p>
-                </div>
-            </aside>
-
-            <!-- ===== RIGHT COLUMN: EDITING FORM ===== -->
-            <main class="profile-form-section">
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <h2>Account Settings</h2>
-                    <p class="form-subtitle">Update your profile information.</p>
-                    
-                    <!-- Personal Info Fieldset -->
-                    <fieldset class="form-group">
-                        <legend>Personal Information</legend>
-                        <div class="field-wrapper">
-                            <label for="{{ form.full_name.id_for_label }}">Full Name</label>
-                            {{ form.full_name }}
-                        </div>
-                        <div class="field-wrapper">
-                            <label for="{{ form.bio.id_for_label }}">Bio / About Me</label>
-                            {{ form.bio }}
-                        </div>
-                    </fieldset>
-                    
-                    <!-- Professional History Fieldset -->
-                    <fieldset class="form-group">
-                        <legend>Professional & Academic History</legend>
-                         <div class="field-wrapper">
-                            <label for="{{ form.department.id_for_label }}">Department</label>
-                            {{ form.department }}
-                        </div>
-                        <div class="field-wrapper">
-                            <label for="{{ form.graduation_year.id_for_label }}">Graduation Year</label>
-                            {{ form.graduation_year }}
-                        </div>
-                        
-                        <!-- Current Job Section (Conditional) -->
-                        <div class="checkbox-wrapper">{{ form.currently_employed.label_tag }} {{ form.currently_employed }}</div>
-                        <div class="conditional-fields" id="current-job-fields">
-                            <div class="field-wrapper"><label for="{{ form.job_title.id_for_label }}">Current Job Title</label>{{ form.job_title }}</div>
-                            <div class="field-wrapper"><label for="{{ form.company_name.id_for_label }}">Current Company</label>{{ form.company_name }}</div>
-                        </div>
-
-                        <!-- Past Job Section (Conditional) -->
-                        <div class="checkbox-wrapper">{{ form.had_past_job.label_tag }} {{ form.had_past_job }}</div>
-                        <div class="conditional-fields" id="past-job-fields">
-                             <div class="field-wrapper"><label for="{{ form.past_job_title.id_for_label }}">Past Job Title</label>{{ form.past_job_title }}</div>
-                             <div class="field-wrapper"><label for="{{ form.past_company_name.id_for_label }}">Past Company</label>{{ form.past_company_name }}</div>
-                        </div>
-                    </fieldset>
-
-                    <!-- Form Actions -->
                     <div class="form-actions">
-                        <button type="submit" class="save-button">Save All Changes</button>
+                        <button type="submit" class="btn-primary">Save Changes</button>
                     </div>
                 </form>
-            </main>
-        </div>
+            </div>
+        </main>
     </div>
-
-    <!-- ===== JAVASCRIPT LOGIC ===== -->
-    <script>
-        // --- Avatar Preview Logic ---
-        const avatarInput = document.getElementById('id_avatar');
-        const avatarPreview = document.getElementById('avatar-preview');
-        const avatarUploadWrapper = document.querySelector('.avatar-upload-wrapper');
-
-        // Trigger the hidden file input when the user clicks the avatar area
-        avatarUploadWrapper.addEventListener('click', () => {
-            avatarInput.click();
-        });
-
-        // When a new file is chosen, read it and display it as the preview
-        avatarInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    avatarPreview.src = e.target.result;
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // --- Conditional Job Fields Logic ---
-        const currentlyEmployedCheckbox = document.getElementById('id_currently_employed');
-        const hadPastJobCheckbox = document.getElementById('id_had_past_job');
-        const currentJobFields = document.getElementById('current-job-fields');
-        const pastJobFields = document.getElementById('past-job-fields');
-
-        function toggleJobFields() {
-            currentJobFields.style.display = currentlyEmployedCheckbox.checked ? 'block' : 'none';
-            pastJobFields.style.display = hadPastJobCheckbox.checked ? 'block' : 'none';
-        }
-
-        // Add event listeners to checkboxes
-        currentlyEmployedCheckbox.addEventListener('change', toggleJobFields);
-        hadPastJobCheckbox.addEventListener('change', toggleJobFields);
-
-        // Run on page load to set the initial state
-        document.addEventListener('DOMContentLoaded', toggleJobFields);
-    </script>
 </body>
-</html>
+
+<!-- Your styles are fine, no changes needed here -->
+<style>
+.form-container {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+}
+.form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+.form-section-title {
+    font-size: 1.1rem;
+    color: var(--heading-color);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.form-group {
+    margin-bottom: 1.5rem;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+.form-group input[type="text"], .form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: var(--content-bg-color);
+    color: var(--text-color);
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+}
+.form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+.avatar-upload-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+.current-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+}
+input[type="file"] {
+    color: transparent;
+}
+.field-errors {
+    color: #e57373;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+.form-actions {
+    margin-top: 2rem;
+    text-align: right;
+}
+.btn-secondary {
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+}
+.btn-secondary:hover {
+    border-color: var(--text-color);
+}
+</style>
+
+{% endblock %}

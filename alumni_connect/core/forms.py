@@ -69,3 +69,12 @@ class ProfileUpdateForm(forms.ModelForm):
             'past_job_title': forms.TextInput(attrs={'placeholder': 'e.g., Intern'}),
             'past_company_name': forms.TextInput(attrs={'placeholder': 'e.g., Microsoft'}),
         }
+
+class SettingsForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        # We'll use the fields we already added to the model
+        fields = ['email_on_new_message']
+        labels = {
+            'email_on_new_message': 'Email me when I receive a new message',
+        }       

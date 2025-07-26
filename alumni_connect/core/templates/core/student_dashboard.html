@@ -1,0 +1,113 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Student Dashboard | AluLink{% endblock %}
+
+{% block content %}
+<!-- Link to your original stylesheet first -->
+<link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+<!-- Link to the new dashboard stylesheet SECOND. This makes its styles take priority. -->
+<link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
+
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <!-- ===== Sidebar ===== -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <!-- FIX #1: Added 'core:' namespace -->
+                <a href="{% url 'core:student_dashboard' %}" class="brand-logo">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>AluLink</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <!-- FIX #2: Added 'core:' namespace -->
+                <a href="{% url 'core:student_dashboard' %}" class="nav-item active">
+                    <i class="fa-solid fa-table-columns"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Find Alumni</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Messages</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ===== Main Content ===== -->
+        <main class="main-content">
+            <!-- Header with Profile Dropdown -->
+            <header class="main-header">
+                <!-- Text is now here -->
+                <div class="main-header-text">
+                    <h1 class="main-title">Dashboard</h1>
+                    <!-- The welcome message is now here as a subtitle! -->
+                    <p class="main-subtitle">Welcome, {{ request.user.first_name|default:request.user.username|title }}!</p>
+                </div>
+                
+                <!-- Profile button only contains image and icon now -->
+                <div class="profile-dropdown">
+                    <button class="profile-btn">
+                        <img src="{% if profile.image %}{{ profile.image.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="Profile Picture">
+                    </button>
+                    <div class="dropdown-content">
+                        <!-- FIX #3: Added 'core:' namespace -->
+                        <a href="{% url 'core:profile' %}"><i class="fa-solid fa-user"></i> My Profile</a>
+                        <a href="#"><i class="fa-solid fa-gear"></i> Account Settings</a>
+                        <hr>
+                        <!-- FIX #4: Added 'core:' namespace -->
+                        <a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Section -->
+            <section class="dashboard-section">
+                <h2 class="section-title">Overview</h2>
+                <div class="stats-grid">
+                    <!-- Stat Card 1 -->
+                    <div class="stat-card">
+                        <div class="card-icon alumni-icon"><i class="fa-solid fa-user-check"></i></div>
+                        <div class="card-info">
+                            <h3>{{ alumni_count }}</h3>
+                            <p>Verified Alumni</p>
+                        </div>
+                    </div>
+                    <!-- Stat Card 2 -->
+                    <div class="stat-card">
+                        <div class="card-icon messages-icon"><i class="fa-solid fa-paper-plane"></i></div>
+                        <div class="card-info">
+                            <h3>0</h3>
+                            <p>Sent Messages</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alumni List Section -->
+            <section class="dashboard-section">
+                 <h2 class="section-title">Alumni In Your Department</h2>
+                 <div class="alumni-list">
+                    
+                    {% for alumni_profile in suggested_alumni %}
+                        <div class="alumni-card">
+                            <img src="{% if alumni_profile.image %}{{ alumni_profile.image.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="{{ alumni_profile.user.first_name }}">
+                            <div class="alumni-info">
+                                <h4>{{ alumni_profile.user.first_name }} {{ alumni_profile.user.last_name }}</h4>
+                                <p>{{ alumni_profile.department }} {% if alumni_profile.graduation_year %}- Graduated {{ alumni_profile.graduation_year }}{% endif %}</p>
+                            </div>
+                            <a href="#" class="btn-primary">View Profile</a>
+                        </div>
+                    {% empty %}
+                        <p>No alumni from your department have registered yet.</p>
+                    {% endfor %}
+
+                 </div>
+            </section>
+        </main>
+    </div>
+</body>
+{% endblock %}  

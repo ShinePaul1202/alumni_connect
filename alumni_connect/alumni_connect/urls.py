@@ -5,10 +5,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')),
-    path('accounts/', include('allauth.urls')), # For social auth
+    path('', include('core.urls')),  # <-- This correctly points the root to your core app
+    path('accounts/', include('allauth.urls')),
 ]
 
-# --- Add this line at the end to serve media files in development ---
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

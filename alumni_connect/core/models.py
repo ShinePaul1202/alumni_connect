@@ -33,5 +33,7 @@ class Profile(models.Model):
     past_job_title = models.CharField(max_length=100, blank=True, null=True)
     past_company_name = models.CharField(max_length=100, blank=True, null=True)
 
+    email_on_new_message = models.BooleanField(default=True)
+    
     def __str__(self):
         return self.full_name

@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+
+# Django media and static files
+media/
+
+# Database file (if you use SQLite for testing)
+db.sqlite3
+*.sqlite3
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*~
+*.DS_Store

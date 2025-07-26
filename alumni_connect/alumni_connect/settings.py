@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from django.contrib.messages import constants as messages
 import os  # <-- ADD THIS LINE
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -155,19 +156,32 @@ AUTHENTICATION_BACKENDS = [
 
 SITE_ID = 1
 
-LOGIN_REDIRECT_URL = '/dashboard/'
+# After a successful login, redirect to the root URL ('/'). 
+# The 'home_view' at this URL will then route the user to their dashboard.
+LOGIN_REDIRECT_URL = '/'
+
+# After a user logs out, send them directly to the login page.
 ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
-SOCIALACCOUNT_ADAPTER = 'core.adapters.RestrictSocialLoginAdapter'
+# If you have not created this adapter file yet, you may need to comment this line out
+SOCIALACCOUNT_ADAPTER = 'core.adapters.RestrictSocialLoginAdapter' 
 
-# --- The modern way to handle these settings ---
-ACCOUNT_LOGIN_METHODS = ['username', 'email'] # Allow login with username OR email
-ACCOUNT_EMAIL_VERIFICATION = 'none'         # Don't require email verification for now
-ACCOUNT_UNIQUE_EMAIL = True                 # Enforce that every email address is unique
-ACCOUNT_SIGNUP_FIELDS = ['email', 'username'] # Specify fields needed for signup form logic
+# --- Fix for deprecation warnings ---
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email' 
+ACCOUNT_EMAIL_REQUIRED = True                  
+ACCOUNT_EMAIL_VERIFICATION = 'none'            
+ACCOUNT_UNIQUE_EMAIL = True 
 # === End Allauth Settings ===
 
 # Media files (User Uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Email Configuration for Gmail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_PASS')
