@@ -74,6 +74,8 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
+    # This is the only change: adding a specific message for the logout action.
+    messages.success(request, "You have been successfully logged out.")
     return redirect('core:login')
 
 

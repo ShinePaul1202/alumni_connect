@@ -56,8 +56,8 @@
                 <!-- Left Column: Picture and Key Details -->
                 <div class="profile-card-left">
                     
-                    <!-- THIS IS THE FIX: The default image path is corrected below -->
-                    <img src="{% if profile.image %}{{ profile.image.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="Profile Picture" class="profile-avatar">
+                    <!-- THIS IS THE FIX: Changed 'profile.image' to 'profile.avatar' -->
+                    <img src="{% if profile.avatar %}{{ profile.avatar.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="Profile Picture" class="profile-avatar">
                     
                     <h2 class="profile-name">
                         {% if profile.user.first_name %}

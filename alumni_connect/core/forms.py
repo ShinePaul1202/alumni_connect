@@ -62,14 +62,32 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        # We now use 'avatar' to match the model field name
-        fields = ['bio', 'avatar'] 
+        # Add the editable work-related fields to the list
+        fields = [
+            'bio', 
+            'avatar', 
+            'currently_employed', 
+            'job_title', 
+            'company_name', 
+            'had_past_job', 
+            'past_job_title', 
+            'past_company_name'
+        ]
         widgets = {
             'bio': forms.Textarea(attrs={'placeholder': 'A short bio to appear on your profile...'}),
+            'job_title': forms.TextInput(attrs={'placeholder': 'e.g., Software Engineer'}),
+            'company_name': forms.TextInput(attrs={'placeholder': 'e.g., Google'}),
+            'past_job_title': forms.TextInput(attrs={'placeholder': 'e.g., Junior Developer'}),
+            'past_company_name': forms.TextInput(attrs={'placeholder': 'e.g., Microsoft'}),
         }
         labels = {
-            # We also update the label to refer to 'avatar'
-            'avatar': 'Change Profile Picture', 
+            'avatar': 'Change Profile Picture',
+            'currently_employed': 'I am currently employed',
+            'job_title': 'Current Job Title',
+            'company_name': 'Current Company',
+            'had_past_job': 'I have past work experience',
+            'past_job_title': 'Past Job Title',
+            'past_company_name': 'Past Company',
         }
 
 # --- SETTINGS FORM ---
