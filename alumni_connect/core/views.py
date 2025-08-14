@@ -9,8 +9,10 @@ from .models import Profile
 
 # --- AUTH & ROUTING VIEWS ---
 
+# === THIS VIEW IS THE ONLY ONE WE ARE MODIFYING ===
 def home_view(request):
     if request.user.is_authenticated:
+        # This part for logged-in users remains exactly the same
         if hasattr(request.user, 'profile') and request.user.profile.user_type == 'student':
             return redirect('core:student_dashboard')
         elif hasattr(request.user, 'profile') and request.user.profile.user_type == 'alumni':
@@ -18,7 +20,9 @@ def home_view(request):
         else:
             return redirect('core:logout')
     else:
-        return redirect('core:login')
+        # THIS IS THE ONLY CHANGE:
+        # Instead of redirecting to login, we now show the animated homepage.
+        return render(request, 'core/index.html') 
 
 def register_view(request):
     if request.method == 'POST':
@@ -79,7 +83,7 @@ def logout_view(request):
     return redirect('core:login')
 
 
-# --- USER-SPECIFIC DASHBOARD AND PROFILE VIEWS ---
+# --- USER-SPECIFIC DASHBOARD AND PROFILE VIEWS (THESE ARE ALL UNCHANGED) ---
 
 @login_required
 def student_dashboard_view(request):

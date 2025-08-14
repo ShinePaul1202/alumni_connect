@@ -6,58 +6,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | AlumniVConnect</title>
+    <title>Login | AluLink</title>
     
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom styles for the design -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(-45deg, #1d2b64, #485563, #2b5876, #4e4376);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            background-attachment: fixed;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .full-height-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .info-section h1, .info-section h5, .info-section i {
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.3);
+        }
+        
+        .glass-card .form-control {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: none;
+            color: #333;
+        }
+        .glass-card .form-floating > label {
+            color: #555;
+        }
+
+        /* --- ADDED: Logo Animation CSS --- */
+        #outer-circle { animation: rotate-clockwise 20s linear infinite; }
+        #inner-circle { animation: rotate-counter-clockwise 15s linear infinite; }
+        #needle { animation: pulse 2s ease-in-out infinite; }
+        
+        @keyframes rotate-clockwise { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotate-counter-clockwise { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+        @keyframes pulse { 50% { filter: drop-shadow(0 0 8px #0D6EFD); } }
+
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-form">
-            <div class="form-header">
-                <h1 class="brand-title">AlumniVConnect</h1>
-                <p class="subtitle">Welcome back! Please enter your details.</p>
+    <div class="container full-height-container">
+        <div class="row align-items-center justify-content-center w-100 gy-5 gy-lg-0">
+
+            <!-- ====== MOBILE-ONLY HEADER ====== -->
+            <!-- This section is only visible on screens smaller than lg -->
+            <div class="col-12 d-lg-none text-white text-center info-section">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-3">
+                        <g id="outer-circle" style="transform-origin: center;">
+                            <path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                        <g id="inner-circle" style="transform-origin: center;">
+                            <path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                        <g id="needle">
+                            <path d="M12.5 12L19 5.5" stroke="#0D6EFD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                    </svg>
+                    <h1 class="display-3 fw-bold">AluLink</h1>
+                </div>
+                <p class="lead text-white-50 mb-4">Unlock your professional future with your alumni network.</p>
             </div>
 
-            <!-- This block displays messages from the backend -->
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="message-banner {{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+            <!-- ====== LOGIN CARD SECTION ====== -->
+            <!-- On large screens, this column will appear second (on the right) -->
+            <div class="col-lg-5 col-md-8 order-lg-2">
+                <div class="card glass-card">
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <div class="text-center mb-4">
+                            <h1 class="h3 fw-bold text-white mb-0">Sign In</h1>
+                            <p class="text-white-50 mt-1">Welcome back!</p>
+                        </div>
 
-            <form method="post" class="main-form">
-                {% csrf_token %}
-                <div class="input-group">
-                    <input type="text" id="login-identifier" name="username" required placeholder="Admission No. or Email">
-                </div>
-                <div class="input-group">
-                    <input type="password" id="password" name="password" required placeholder="Password">
-                </div>
-                <div class="form-options">
-                    <!-- FIX #1: Added 'core:' namespace -->
-                    <a href="{% url 'core:password_reset' %}" class="forgot-password">Forgot Password?</a>
-                </div>
-                <button type="submit" class="login-button">Sign In</button>
-            </form>
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
 
-            <div class="separator">
-                <span>OR</span>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="login-identifier" name="username" required placeholder="Admission No. or Email">
+                                <label for="login-identifier">Admission No. or Email</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="password" class="form-control" id="password" name="password" required placeholder="Password">
+                                <label for="password">Password</label>
+                            </div>
+                            <div class="text-end mb-3">
+                                <a href="{% url 'core:password_reset' %}" class="text-white-50 small">Forgot Password?</a>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg fw-semibold">Sign In</button>
+                            </div>
+                        </form>
+
+                        <div class="row my-3 align-items-center">
+                            <div class="col"><hr class="border-light-subtle"></div>
+                            <div class="col-auto text-white-50 small">OR</div>
+                            <div class="col"><hr class="border-light-subtle"></div>
+                        </div>
+
+                        <div class="d-grid">
+                            <a href="{% provider_login_url 'google' %}" class="btn btn-light fw-semibold">
+                                <img src="https://www.google.com/favicon.ico" alt="Google Icon" style="width: 20px; margin-right: 10px;">
+                                Continue with Google
+                            </a>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <p class="text-white-50">Don't have an account? <a href="{% url 'core:register' %}" class="text-white fw-semibold">Sign up for free</a></p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="social-logins">
-                 <button class="social-button" onclick="window.location.href='{% provider_login_url 'google' %}'">
-                    <img src="https://www.google.com/favicon.ico" alt="Google"> Continue with Google
-                </button>
-            </div>
-
-            <div class="signup-link">
-                <!-- FIX #2: Added 'core:' namespace -->
-                <p>Don't have an account? <a href="{% url 'core:register' %}">Sign up for free</a></p>
+            <!-- ====== INFO & LOGO SECTION ====== -->
+            <!-- On large screens, this column will appear first (on the left) -->
+            <div class="col-lg-6 text-white text-center text-lg-start info-section order-lg-1">
+                
+                <!-- This div is hidden on mobile and visible on desktop -->
+                <div class="d-none d-lg-block">
+                    <div class="d-flex align-items-center justify-content-center justify-content-lg-start mb-3">
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-3">
+                            <g id="outer-circle" style="transform-origin: center;">
+                                <path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </g>
+                            <g id="inner-circle" style="transform-origin: center;">
+                                <path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </g>
+                            <g id="needle">
+                                <path d="M12.5 12L19 5.5" stroke="#0D6EFD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </g>
+                        </svg>
+                        <h1 class="display-3 fw-bold">AluLink</h1>
+                    </div>
+                    <p class="lead text-white-50 mb-4">Unlock your professional future with your alumni network.</p>
+                </div>
+                
+                <div class="d-flex align-items-start text-start mb-3">
+                    <i class="bi bi-person-check-fill fs-2 text-primary me-3"></i>
+                    <div>
+                        <h5 class="fw-semibold">Create Your Verified Profile</h5>
+                        <p class="text-white-50 small">Sign up in minutes as a student or an alumnus. Every profile is verified by our administrators to ensure a trusted and exclusive network.</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start text-start mb-3">
+                    <i class="bi bi-search-heart fs-2 text-primary me-3"></i>
+                    <div>
+                        <h5 class="fw-semibold">Discover Smart Connections</h5>
+                        <p class="text-white-50 small">Our AI intelligently suggests alumni from your specific department, ensuring your feed is filled with the most relevant mentors and industry contacts for your career path.</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start text-start">
+                    <i class="bi bi-send-fill fs-2 text-primary me-3"></i>
+                    <div>
+                        <h5 class="fw-semibold">Connect and Grow</h5>
+                        <p class="text-white-50 small">Use our secure messaging to ask for career advice, inquire about job openings at their companies, and build meaningful professional relationships that last a lifetime.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 </body>
 </html>

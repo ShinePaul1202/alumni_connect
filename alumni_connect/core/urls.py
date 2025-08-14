@@ -35,12 +35,14 @@ urlpatterns = [
         ), 
         name='password_change_done'),
         
-    # === PASSWORD RESET URLS (FINAL CORRECTED VERSION) ===
+    # === PASSWORD RESET URLS (CORRECTED FOR HTML EMAIL) ===
     path('password_reset/', 
          auth_views.PasswordResetView.as_view(
             template_name='core/password_reset.html',
-            # THIS LINE TELLS DJANGO TO USE YOUR NEW EMAIL TEMPLATE
-            email_template_name='core/password_reset_email.html',
+            # This points to the plain text fallback version
+            email_template_name='core/password_reset_email.txt',
+            # This points to the styled HTML version
+            html_email_template_name='core/password_reset_email.html',
             success_url=reverse_lazy('core:password_reset_done') 
          ), 
          name='password_reset'),
