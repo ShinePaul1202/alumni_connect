@@ -20,13 +20,15 @@ urlpatterns = [
     # Profile viewing and updating
     path('profile/update/', views.profile_update_view, name='profile_update'),
     path('profile/', views.profile_view, name='profile'),
+    path('account/settings/', views.account_settings_view, name='account_settings'),
+    path('account/update/', views.account_update_view, name='account_update'),
     
     # Settings and Password Change
     path('settings/', views.settings_view, name='settings'),
     path('account/password/change/', 
         auth_views.PasswordChangeView.as_view(
             template_name='core/account/change_password.html',
-            success_url='/account/password/change/done/'
+            success_url=reverse_lazy('core:password_change_done')
         ), 
         name='password_change'),
     path('account/password/change/done/', 

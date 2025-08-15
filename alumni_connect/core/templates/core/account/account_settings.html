@@ -1,0 +1,145 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Account Settings | AluLink{% endblock %}
+
+{% block content %}
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --sidebar-bg: #1e293b; --main-bg: #f8fafc; --card-bg: #ffffff; --text-dark: #0f172a;
+            --text-light: #f1f5f9; --text-muted: #64748b; --primary-color: #4f46e5; --primary-hover: #4338ca;
+            --border-color: #e2e8f0; --shadow-color: rgba(79, 70, 229, 0.1); --sidebar-width: 260px;
+        }
+        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .dashboard-container { display: flex; }
+        .sidebar {width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; display: flex; flex-direction: column; color: var(--text-light); flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: transform 0.3s ease-in-out; z-index: 1050;}
+        .brand-logo {display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem;}
+        .sidebar-nav .nav-item {display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; transition: background-color 0.2s ease;}
+        .sidebar-nav .nav-item:hover {background-color: rgba(255, 255, 255, 0.07);}
+        .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
+        .sidebar-nav .nav-item i { width: 20px; text-align: center; }
+        .main-content {flex-grow: 1; padding: 2.5rem; width: 100%; transition: margin-left 0.3s ease-in-out;}
+        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; }
+        .header-title-wrapper { display: flex; align-items: center; }
+        .main-title { font-weight: 700; font-size: 2rem; color: var(--text-dark); margin: 0; }
+        .main-subtitle { font-size: 1rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .sidebar-toggle {background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-dark); font-size: 1.25rem; padding: 0.25rem 0.75rem; transition: background-color 0.2s ease;}
+        .settings-grid { display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem; align-items: flex-start; }
+        .settings-nav .list-group-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border: none; border-radius: 0.75rem; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-muted); transition: all 0.2s ease-in-out; border-left: 4px solid transparent; }
+        .settings-nav .list-group-item i { font-size: 1.1rem; width: 24px; text-align: center; }
+        .settings-nav .list-group-item:hover { background-color: #f1f0ff; color: var(--primary-color); }
+        .settings-nav .list-group-item.active { background-color: #f1f0ff; color: var(--primary-color); border-left-color: var(--primary-color); }
+        .card { border: 1px solid var(--border-color); border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); overflow: hidden; }
+        .card-header { padding: 1.5rem; background-color: #fff; border-bottom: 1px solid var(--border-color); }
+        .card-header-content h3 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+        .card-header-content p { font-size: 0.9rem; color: var(--text-muted); margin: 0.25rem 0 0; }
+        .card-body { padding: 2rem; }
+        .settings-pane { display: none; }
+        .settings-pane.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .form-label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .form-control, .form-select { padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); transition: border-color 0.2s, box-shadow 0.2s; }
+        .form-control:focus, .form-select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--shadow-color); outline: none; }
+        .form-control:disabled { background-color: #f8f9fa; }
+        .password-help-text { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.75rem; padding-left: 1.25rem; }
+        .password-help-text ul { margin-bottom: 0; }
+        .btn-primary { background-image: linear-gradient(to right, #4f46e5, #6366f1); color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px 0 rgba(79, 70, 229, 0.3); }
+        .btn-primary:hover { background-position: right center; box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color); }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
+        @media (min-width: 992px) { .main-content { margin-left: var(--sidebar-width); } }
+        @media (max-width: 991.98px) {
+            .sidebar { transform: translateX(-100%); position: fixed; }
+            body.sidebar-visible .sidebar { transform: translateX(0); }
+            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
+            .main-content { padding: 1.5rem; }
+            .main-title { font-size: 1.75rem; }
+            .settings-grid { grid-template-columns: 1fr; }
+            .settings-nav { margin-bottom: 1.5rem; }
+            .card-body { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body class="">
+    <div class="dashboard-container">
+        <div class="overlay" id="overlay"></div>
+        <aside class="sidebar" id="sidebar">
+            <a href="{% url 'core:home' %}" class="brand-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg><span>AluLink</span></a>
+            <nav class="sidebar-nav mt-3"><a href="{% if request.user.profile.user_type == 'student' %}{% url 'core:student_dashboard' %}{% else %}{% url 'core:alumni_dashboard' %}{% endif %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a><a href="#" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a><a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a><a href="{% url 'core:account_settings' %}" class="nav-item active"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-title-wrapper"><button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button"><i class="fa-solid fa-bars"></i></button><div><h1 class="main-title">Settings</h1><p class="main-subtitle d-none d-lg-block">Manage your account, password, and notification preferences.</p></div></div>
+            </header>
+
+            {% if messages %}{% for message in messages %}<div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}
+
+            <div class="settings-grid">
+                <nav class="settings-nav"><div class="list-group" role="tablist"><a href="#account" class="list-group-item active" role="tab"><i class="fa-solid fa-user-gear"></i>Account Details</a><a href="#security" class="list-group-item" role="tab"><i class="fa-solid fa-shield-halved"></i>Password & Security</a><a href="#notifications" class="list-group-item" role="tab"><i class="fa-solid fa-bell"></i>Notifications</a></div></nav>
+                <div class="settings-content">
+                    <div class="settings-pane active" id="account" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header"><div class="card-header-content"><h3>Account Information</h3><p>Update your account and academic details.</p></div></div>
+                            <div class="card-body">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div class="mb-4">
+                                        <label for="{{ user_form.username.id_for_label }}" class="form-label">Username</label>
+                                        {{ user_form.username }}
+                                        <div class="form-text mt-1">{{ user_form.username.help_text }}</div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="{{ user_form.email.id_for_label }}" class="form-label">Email Address</label>
+                                        {{ user_form.email }}
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-4">
+                                            <label for="{{ profile_form.department.id_for_label }}" class="form-label">Department</label>
+                                            {{ profile_form.department }}
+                                            {{ profile_form.department.errors }}
+                                        </div>
+                                        <div class="col-md-6 mb-4">
+                                            <label for="{{ profile_form.graduation_year.id_for_label }}" class="form-label">Graduation Year</label>
+                                            {{ profile_form.graduation_year }}
+                                            {{ profile_form.graduation_year.errors }}
+                                        </div>
+                                    </div>
+                                    <button type="submit" name="update_account" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-pane" id="security" role="tabpanel">
+                        <div class="card"><div class="card-header"><div class="card-header-content"><h3>Change Password</h3><p>For your security, choose a strong and unique password.</p></div></div><div class="card-body"><form method="post">{% csrf_token %}{{ password_form.non_field_errors }}<div class="mb-4"><label for="{{ password_form.old_password.id_for_label }}" class="form-label">Current Password</label><input type="password" name="old_password" id="{{ password_form.old_password.id_for_label }}" class="form-control" required>{{ password_form.old_password.errors }}</div><div class="mb-4"><label for="{{ password_form.new_password1.id_for_label }}" class="form-label">New Password</label><input type="password" name="new_password1" id="{{ password_form.new_password1.id_for_label }}" class="form-control" required>{{ password_form.new_password1.errors }}<div class="password-help-text">{{ password_form.new_password1.help_text|safe }}</div></div><div class="mb-4"><label for="{{ password_form.new_password2.id_for_label }}" class="form-label">Confirm New Password</label><input type="password" name="new_password2" id="{{ password_form.new_password2.id_for_label }}" class="form-control" required>{{ password_form.new_password2.errors }}</div><button type="submit" name="change_password" class="btn btn-primary mt-2"><i class="fa-solid fa-key me-2"></i>Update Password</button></form></div></div>
+                    </div>
+                    <div class="settings-pane" id="notifications" role="tabpanel">
+                        <div class="card"><div class="card-header"><div class="card-header-content"><h3>Notification Settings</h3><p>Control how you receive notifications from AluLink.</p></div></div><div class="card-body"><form method="post">{% csrf_token %}<div class="d-flex align-items-center justify-content-between"><label class="mb-0 me-3" for="{{ settings_form.email_on_new_message.id_for_label }}"><strong>{{ settings_form.email_on_new_message.label }}</strong><p class="text-muted mb-0 small">Receive an email when a new message arrives in your inbox.</p></label><div class="form-check form-switch fs-4">{{ settings_form.email_on_new_message }}</div></div><hr class="my-4"><button type="submit" name="update_notifications" class="btn btn-primary"><i class="fa-solid fa-bell me-2"></i>Save Preferences</button></form></div></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleButton = document.getElementById('sidebar-toggle-btn');
+            const overlay = document.getElementById('overlay');
+            const body = document.body;
+            if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
+            if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }
+            const navLinks = document.querySelectorAll('.settings-nav .list-group-item');
+            const contentPanes = document.querySelectorAll('.settings-content .settings-pane');
+            navLinks.forEach(link => { link.addEventListener('click', function (event) { event.preventDefault(); const targetId = this.getAttribute('href'); navLinks.forEach(item => item.classList.remove('active')); contentPanes.forEach(pane => pane.classList.remove('active')); this.classList.add('active'); document.querySelector(targetId).classList.add('active'); }); });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+{% endblock %}

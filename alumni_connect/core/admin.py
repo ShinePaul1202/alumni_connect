@@ -1,62 +1,32 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from .models import Profile
 
-# First, unregister the old User admin to make way for our custom one.
+# Unregister the default User admin to use our custom one
 admin.site.unregister(User)
 
+# --- Admin Actions ---
 @admin.action(description='Verify selected user profiles')
 def verify_selected_profiles(modeladmin, request, queryset):
-    """
-    Custom action to verify the profiles associated with the selected users.
-    """
+    """ Action to verify users and clear any fraud warnings. """
     profile_ids = queryset.values_list('profile__id', flat=True)
-    Profile.objects.filter(id__in=profile_ids).update(is_verified=True)
+    Profile.objects.filter(id__in=profile_ids).update(is_verified=True, fraud_warning=None)
+    modeladmin.message_user(request, "Selected users have been successfully verified.", messages.SUCCESS)
 
-# This is our new, powerful User admin that combines User and Profile.
+@admin.action(description='Mark selected users as fraudulent')
+def mark_as_fraudulent(modeladmin, request, queryset):
+    """ Action to un-verify users and add a fraud warning. """
+    reason = "This account has been flagged for violating platform policies. Please contact support for assistance."
+    profile_ids = queryset.values_list('profile__id', flat=True)
+    Profile.objects.filter(id__in=profile_ids).update(is_verified=False, fraud_warning=reason)
+    modeladmin.message_user(request, "Selected users have been marked as fraudulent.", messages.WARNING)
+
+
 @admin.register(User)
 class CustomUserAdmin(BaseUserAdmin):
-    """
-    A custom User admin that displays Profile information and allows powerful filtering.
-    """
+    """ Custom User admin that includes Profile information. """
 
-    # --- LIST VIEW CONFIGURATION (with Graduation Year) ---
-    list_display = (
-        'username',
-        'email',
-        'get_full_name',
-        'get_is_verified',
-        'get_user_type',
-        'get_department',
-        'get_graduation_year', # CORRECTED: Added this field back
-        'is_staff',
-    )
-
-    # --- FILTER AND SEARCH (with Graduation Year) ---
-    list_filter = (
-        'is_staff',
-        'is_superuser',
-        'is_active',
-        'groups',
-        'profile__is_verified',
-        'profile__user_type',
-        'profile__department',
-        'profile__graduation_year', # CORRECTED: Added this field back
-        'profile__currently_employed',
-        'profile__had_past_job',
-    )
-    search_fields = (
-        'username',
-        'email',
-        'profile__full_name',
-        'profile__department',
-    )
-    
-    # --- ACTIONS ---
-    actions = [verify_selected_profiles]
-
-    # --- PROFILE EDITING (The "Inline" part) ---
     class ProfileInline(admin.StackedInline):
         model = Profile
         can_delete = False
@@ -66,11 +36,23 @@ class CustomUserAdmin(BaseUserAdmin):
             (None, {'fields': ('avatar', 'full_name', 'bio')}),
             ('Academic & Professional Details', {'fields': ('user_type', 'department', 'graduation_year', 'is_verified')}),
             ('Work Experience', {'fields': ('currently_employed', 'job_title', 'company_name', 'had_past_job', 'past_job_title', 'past_company_name')}),
+            ('Admin Controls', {'fields': ('fraud_warning',)}) # Fraud warning field
         )
 
     inlines = (ProfileInline,)
+    actions = [verify_selected_profiles, mark_as_fraudulent]
 
-    # --- Helper methods to get data from the related Profile ---
+    list_display = (
+        'username', 'email', 'get_full_name', 'get_is_verified', 
+        'get_user_type', 'get_department', 'get_graduation_year', 'is_staff'
+    )
+    list_filter = (
+        'is_staff', 'is_superuser', 'is_active', 'groups', 
+        'profile__is_verified', 'profile__user_type', 'profile__department'
+    )
+    search_fields = ('username', 'email', 'profile__full_name')
+
+    # Helper methods to display Profile data in the User list
     def get_full_name(self, instance):
         return instance.profile.full_name
     get_full_name.short_description = 'Full Name'
@@ -88,7 +70,6 @@ class CustomUserAdmin(BaseUserAdmin):
         return instance.profile.department
     get_department.short_description = 'Department'
 
-    # CORRECTED: Added the helper method for graduation year
     def get_graduation_year(self, instance):
         return instance.profile.graduation_year
     get_graduation_year.short_description = 'Grad Year'

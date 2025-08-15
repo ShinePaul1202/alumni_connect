@@ -62,17 +62,7 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        # Add the editable work-related fields to the list
-        fields = [
-            'bio', 
-            'avatar', 
-            'currently_employed', 
-            'job_title', 
-            'company_name', 
-            'had_past_job', 
-            'past_job_title', 
-            'past_company_name'
-        ]
+        fields = [ 'bio', 'avatar', 'currently_employed', 'job_title', 'company_name', 'had_past_job', 'past_job_title', 'past_company_name' ]
         widgets = {
             'bio': forms.Textarea(attrs={'placeholder': 'A short bio to appear on your profile...'}),
             'job_title': forms.TextInput(attrs={'placeholder': 'e.g., Software Engineer'}),
@@ -81,12 +71,8 @@ class ProfileUpdateForm(forms.ModelForm):
             'past_company_name': forms.TextInput(attrs={'placeholder': 'e.g., Microsoft'}),
         }
         labels = {
-            'avatar': 'Change Profile Picture',
-            'currently_employed': 'I am currently employed',
-            'job_title': 'Current Job Title',
-            'company_name': 'Current Company',
-            'had_past_job': 'I have past work experience',
-            'past_job_title': 'Past Job Title',
+            'avatar': 'Change Profile Picture', 'currently_employed': 'I am currently employed', 'job_title': 'Current Job Title',
+            'company_name': 'Current Company', 'had_past_job': 'I have past work experience', 'past_job_title': 'Past Job Title',
             'past_company_name': 'Past Company',
         }
 
@@ -95,6 +81,38 @@ class SettingsForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['email_on_new_message']
-        labels = {
-            'email_on_new_message': 'Email me when I receive a new message',
-        }
+        labels = { 'email_on_new_message': 'Email me when I receive a new message', }
+        widgets = { 'email_on_new_message': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'}), }
+
+class AccountUserUpdateForm(forms.ModelForm):
+    email = forms.EmailField(required=True)
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+        help_texts = { 'username': 'This is your unique Admission No. and cannot be changed.', }
+        widgets = { 'username': forms.TextInput(attrs={'class': 'form-control'}), 'email': forms.EmailInput(attrs={'class': 'form-control'}), }
+
+    def __init__(self, *args, **kwargs):
+        super(AccountUserUpdateForm, self).__init__(*args, **kwargs)
+        self.fields['username'].disabled = True
+        self.fields['username'].required = False
+
+class AccountProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['graduation_year']
+
+# --- NEW FORM ADDED FOR SETTINGS PAGE ---
+class AccountProfileSettingsForm(forms.ModelForm):
+    DEPARTMENT_CHOICES = [
+        ('', 'Select your Department'), 
+        ('Computer Science', 'Computer Science'), 
+        ('Electrical Engineering', 'Electrical Engineering'),
+        ('Mechanical Engineering', 'Mechanical Engineering'),
+    ]
+    department = forms.ChoiceField(choices=DEPARTMENT_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
+    graduation_year = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 2024'}))
+
+    class Meta:
+        model = Profile
+        fields = ['department', 'graduation_year']
