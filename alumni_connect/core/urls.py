@@ -20,22 +20,14 @@ urlpatterns = [
     # Profile viewing and updating
     path('profile/update/', views.profile_update_view, name='profile_update'),
     path('profile/', views.profile_view, name='profile'),
-    path('account/settings/', views.account_settings_view, name='account_settings'),
-    path('account/update/', views.account_update_view, name='account_update'),
+    # NEW "Settings Home" URL: This is the new entry point for the settings menu.
+    path('account/settings/', views.settings_home_view, name='account_settings'),
     
-    # Settings and Password Change
-    path('settings/', views.settings_view, name='settings'),
-    path('account/password/change/', 
-        auth_views.PasswordChangeView.as_view(
-            template_name='core/account/change_password.html',
-            success_url=reverse_lazy('core:password_change_done')
-        ), 
-        name='password_change'),
-    path('account/password/change/done/', 
-        auth_views.PasswordChangeDoneView.as_view(
-            template_name='core/account/change_password_done.html'
-        ), 
-        name='password_change_done'),
+    # The links to the individual form pages remain the same.
+    path('account/settings/details/', views.account_details_view, name='account_details'),
+    path('account/settings/password/', views.password_security_view, name='password_security'),
+    path('account/settings/notifications/', views.notification_settings_view, name='notification_settings'),
+    
         
     # === PASSWORD RESET URLS (CORRECTED FOR HTML EMAIL) ===
     path('password_reset/', 

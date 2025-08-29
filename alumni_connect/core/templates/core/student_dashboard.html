@@ -60,6 +60,7 @@
                 <a href="{% url 'core:student_dashboard' %}" class="nav-item active"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
                 <a href="#" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
                 <a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                <a href="{% url 'core:account_settings' %}" class="nav-item"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
             </nav>
         </aside>
 
@@ -71,7 +72,7 @@
                     <div class="profile-dropdown-btn">
                         <img src="{{ profile.avatar.url }}" alt="Profile">
                     </div>
-                    <div class="profile-dropdown-menu"><a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a><a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i> Account Settings</a><hr class="my-1"><a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a></div>
+                    <div class="profile-dropdown-menu"><a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a><a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i>Settings</a><hr class="my-1"><a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a></div>
                 </div>
             </header>
 

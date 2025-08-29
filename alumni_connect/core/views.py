@@ -74,6 +74,12 @@ def logout_view(request):
 @login_required
 def student_dashboard_view(request):
     profile = request.user.profile
+    if profile.is_verified and not profile.has_seen_verification_message:
+        messages.success(request, "Congratulations! Your account has been successfully verified. You now have full access to the platform.")
+        
+        # Mark the message as "seen" so it doesn't show again
+        profile.has_seen_verification_message = True
+        profile.save(update_fields=['has_seen_verification_message'])
     suggested_alumni = []
     if profile.is_verified:
         suggested_alumni = Profile.objects.filter(
@@ -88,6 +94,14 @@ def student_dashboard_view(request):
 @login_required
 def alumni_dashboard_view(request):
     profile = request.user.profile
+    if profile.is_verified and not profile.has_seen_verification_message:
+        
+        # 1. Add the success message that will be displayed in the template.
+        messages.success(request, "Congratulations! Your account has been successfully verified. You now have full access to the platform.")
+        
+        # 2. Update the flag in the database so this message only appears once.
+        profile.has_seen_verification_message = True
+        profile.save(update_fields=['has_seen_verification_message'])
     recent_alumni = []
     if profile.is_verified:
         recent_alumni = Profile.objects.filter(
@@ -119,74 +133,95 @@ def profile_update_view(request):
     context = { 'u_form': u_form, 'p_form': p_form, 'profile': profile }
     return render(request, 'core/profile_update.html', context)
 
+@login_required
+def settings_home_view(request):
+    """
+    Displays the main settings menu page.
+    """
+    context = {
+        'profile': request.user.profile
+    }
+    return render(request, 'core/account/settings_home.html', context)
+
 # --- MODIFIED VIEW TO HANDLE NEW PROFILE FIELDS ---
 @login_required
-def account_settings_view(request):
+def account_details_view(request):
+    """
+    Handles updating the user's non-sensitive account info like email, department, etc.
+    This view corresponds to the "Account Details" tab.
+    """
     if request.method == 'POST':
-        if 'update_account' in request.POST:
-            user_form = AccountUserUpdateForm(request.POST, instance=request.user)
-            profile_form = AccountProfileSettingsForm(request.POST, instance=request.user.profile)
-            if user_form.is_valid() and profile_form.is_valid():
-                user_form.save()
-                profile_form.save()
-                messages.success(request, 'Your account information has been updated successfully!')
-            else:
-                messages.error(request, 'Please correct the errors below.')
-        elif 'change_password' in request.POST:
-            password_form = PasswordChangeForm(request.user, request.POST)
-            if password_form.is_valid():
-                user = password_form.save()
-                update_session_auth_hash(request, user)
-                messages.success(request, 'Your password was successfully updated!')
-            else:
-                messages.error(request, 'There was an error updating your password.')
-        elif 'update_notifications' in request.POST:
-            settings_form = SettingsForm(request.POST, instance=request.user.profile)
-            if settings_form.is_valid():
-                settings_form.save()
-                messages.success(request, 'Your notification settings have been updated.')
-            else:
-                messages.error(request, 'Could not update notification settings.')
-        return redirect('core:account_settings')
-    else:
-        user_form = AccountUserUpdateForm(instance=request.user)
-        profile_form = AccountProfileSettingsForm(instance=request.user.profile)
-        password_form = PasswordChangeForm(request.user)
-        settings_form = SettingsForm(instance=request.user.profile)
-
-    context = {
-        'user_form': user_form,
-        'profile_form': profile_form,
-        'password_form': password_form,
-        'settings_form': settings_form
-    }
-    return render(request, 'core/account/account_settings.html', context)
-
-# --- UNUSED VIEWS (CAN BE REMOVED LATER) ---
-@login_required
-def settings_view(request):
-    if request.method == 'POST':
-        form = SettingsForm(request.POST, instance=request.user.profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your settings have been updated.')
-            return redirect('core:settings')
-    else:
-        form = SettingsForm(instance=request.user.profile)
-    return render(request, 'core/settings.html', {'form': form})
-
-@login_required
-def account_update_view(request):
-    if request.method == 'POST':
+        # We use the forms you already created
         user_form = AccountUserUpdateForm(request.POST, instance=request.user)
-        profile_form = AccountProfileUpdateForm(request.POST, instance=request.user.profile)
+        profile_form = AccountProfileSettingsForm(request.POST, instance=request.user.profile)
+
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            messages.success(request, 'Your account information has been updated successfully!')
-            return redirect('core:account_settings')
+            messages.success(request, 'Your account details have been updated successfully.')
+            return redirect('core:account_details') # Redirect back to the same page
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
+        # For a GET request, create instances of the forms with current user data
         user_form = AccountUserUpdateForm(instance=request.user)
-        profile_form = AccountProfileUpdateForm(instance=request.user.profile)
-    context = { 'user_form': user_form, 'profile_form': profile_form }
-    return render(request, 'core/account/account_update.html', context)
+        profile_form = AccountProfileSettingsForm(instance=request.user.profile)
+
+    context = {
+        'profile': request.user.profile,
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'active_tab': 'details'  # This is used by the template to highlight the correct link
+    }
+    return render(request, 'core/account/settings_details.html', context)
+
+
+@login_required
+def password_security_view(request):
+    """
+    Handles changing the user's password.
+    This view corresponds to the "Password & Security" tab.
+    """
+    if request.method == 'POST':
+        # Django's built-in form is perfect for this
+        password_form = PasswordChangeForm(request.user, request.POST)
+        if password_form.is_valid():
+            user = password_form.save()
+            update_session_auth_hash(request, user)  # Keeps the user logged in
+            messages.success(request, 'Your password was successfully updated.')
+            return redirect('core:password_security') # Redirect back to the same page
+        else:
+            messages.error(request, 'There was an error updating your password. Please check the details below.')
+    else:
+        password_form = PasswordChangeForm(request.user)
+
+    context = {
+        'profile': request.user.profile,
+        'password_form': password_form,
+        'active_tab': 'password'
+    }
+    return render(request, 'core/account/settings_password.html', context)
+
+
+@login_required
+def notification_settings_view(request):
+    """
+    Handles updating the user's notification preferences.
+    This view corresponds to the "Notifications" tab.
+    """
+    if request.method == 'POST':
+        # We use the SettingsForm you already created
+        settings_form = SettingsForm(request.POST, instance=request.user.profile)
+        if settings_form.is_valid():
+            settings_form.save()
+            messages.success(request, 'Your notification settings have been updated.')
+            return redirect('core:notification_settings') # Redirect back to the same page
+    else:
+        settings_form = SettingsForm(instance=request.user.profile)
+
+    context = {
+        'profile': request.user.profile,
+        'settings_form': settings_form,
+        'active_tab': 'notifications'
+    }
+    return render(request, 'core/account/settings_notifications.html', context)

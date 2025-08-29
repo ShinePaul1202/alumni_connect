@@ -20,8 +20,8 @@ class Profile(models.Model):
     department = models.CharField(max_length=100)
     graduation_year = models.PositiveIntegerField(null=True, blank=True)
     is_verified = models.BooleanField(default=False)
-    
-    # --- ADD THIS FIELD ---
+    has_seen_verification_message = models.BooleanField(default=False)
+
     # This field will store any warnings issued by an admin.
     fraud_warning = models.TextField(blank=True, null=True)
     

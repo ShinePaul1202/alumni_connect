@@ -11,7 +11,11 @@ admin.site.unregister(User)
 def verify_selected_profiles(modeladmin, request, queryset):
     """ Action to verify users and clear any fraud warnings. """
     profile_ids = queryset.values_list('profile__id', flat=True)
-    Profile.objects.filter(id__in=profile_ids).update(is_verified=True, fraud_warning=None)
+    Profile.objects.filter(id__in=profile_ids).update(
+        is_verified=True, 
+        fraud_warning=None,
+        has_seen_verification_message=True
+    )
     modeladmin.message_user(request, "Selected users have been successfully verified.", messages.SUCCESS)
 
 @admin.action(description='Mark selected users as fraudulent')

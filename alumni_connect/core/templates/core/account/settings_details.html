@@ -1,0 +1,187 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Account Details | Settings{% endblock %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- CSS and Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --sidebar-bg: #1e293b;
+            --main-bg: #f8fafc;
+            --text-dark: #0f172a;
+            --text-light: #e2e8f0;
+            --text-muted: #64748b;
+            --primary-color: #3b82f6;
+            --border-color: #e2e8f0;
+            --card-bg: white;
+            --shadow-color: rgba(99, 102, 241, 0.1);
+            --sidebar-width: 260px;
+        }
+
+        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; overflow-x: hidden; }
+        .dashboard-container { display: flex; position: relative; }
+
+        /* --- Sidebar Styles --- */
+        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease; }
+        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
+        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
+        .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); border-left-color: var(--primary-color); }
+        .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
+        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; background-color: transparent; }
+        .sidebar-nav .nav-item.disabled:hover { background-color: transparent; border-left-color: transparent; }
+        .sidebar-nav .nav-item i { width: 20px; text-align: center; }
+
+        /* --- Main Content & Header Styles --- */
+        .main-content { flex-grow: 1; padding: 2.5rem; width: calc(100% - var(--sidebar-width)); transition: margin-left 0.3s ease; }
+        .header { display: flex; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
+        .btn-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-dark); text-decoration: none; transition: background-color 0.2s ease, box-shadow 0.2s ease; }
+        .btn-back:hover { background-color: #f3f4f6; border-color: #d1d5db; }
+        
+        /* --- Form Styles --- */
+        .form-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); }
+        .form-label { font-weight: 600; }
+        .form-control, .form-select { 
+            padding: 0.75rem 1rem; 
+            border-color: #d1d5db; 
+            height: 100%; /* Ensure consistent height */
+        }
+        .form-control:focus, .form-select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .form-control[disabled], .form-control[readonly] { background-color: #f3f4f6; cursor: not-allowed; }
+        .form-text { font-size: 0.875rem; }
+        .btn-primary { padding: 0.75rem 1.5rem; font-weight: 500; }
+        
+        /* Input Group Styles - FIXED */
+        .input-group { 
+            display: flex;
+            align-items: stretch; /* Ensure all elements stretch to same height */
+        }
+        .input-group-text { 
+            background-color: #f9fafb; 
+            border-color: #d1d5db; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 45px;
+            padding: 0.75rem 0.75rem;
+        }
+        .input-group .form-control { 
+            flex: 1 1 auto;
+            width: 1%;
+            min-width: 0;
+        }
+
+        /* --- Responsive Styles --- */
+        .sidebar-toggle { display: none; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        @media (max-width: 991.98px) {
+            .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.3s ease; }
+            .main-content { width: 100%; padding: 1.5rem; }
+            .sidebar-toggle { display: block; background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; width: 40px; height: 40px; }
+            body.sidebar-visible .sidebar { transform: translateX(0); }
+            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="overlay" id="overlay"></div>
+        <aside class="sidebar" id="sidebar">
+            <a href="{% url 'core:home' %}" class="brand-logo"><span>AluLink</span></a>
+            <nav class="sidebar-nav mt-3">
+                {% if profile.user_type == 'alumni' %}<a href="{% url 'core:alumni_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% else %}<a href="{% url 'core:student_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% endif %}
+                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                <a href="{% url 'core:account_settings' %}" class="nav-item active"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <button class="sidebar-toggle" id="sidebar-toggle-btn"><i class="fa-solid fa-bars"></i></button>
+                <a href="{% url 'core:account_settings' %}" class="btn-back" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
+            </div>
+
+            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}
+            
+            <div class="form-card">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="h3 fw-bold mb-1">Account Details</h2>
+                    <p class="text-muted mb-4">Update your academic and contact information.</p>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="{{ user_form.username.id_for_label }}" class="form-label">Admission No (Username)</label>
+                            {{ user_form.username }}
+                            <div class="form-text">{{ user_form.username.help_text }}</div>
+                        </div>
+                        
+                        <!-- Input Group for Email - FIXED ALIGNMENT -->
+                        <div class="mb-4">
+                            <label for="{{ user_form.email.id_for_label }}" class="form-label">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-at fa-fw"></i></span>
+                                <input type="email" name="{{ user_form.email.name }}" id="{{ user_form.email.id_for_label }}" 
+                                       value="{{ user_form.email.value|default:'' }}" class="form-control" 
+                                       placeholder="Enter your email address" {% if user_form.email.field.required %}required{% endif %}>
+                            </div>
+                            {% if user_form.email.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in user_form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ profile_form.department.id_for_label }}" class="form-label">Department</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-building-columns fa-fw"></i></span>
+                                    {{ profile_form.department }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ profile_form.graduation_year.id_for_label }}" class="form-label">Graduation Year</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-calendar-days fa-fw"></i></span>
+                                    {{ profile_form.graduation_year }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleButton = document.getElementById('sidebar-toggle-btn');
+            const overlay = document.getElementById('overlay');
+            const body = document.body;
+            if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
+            if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }
+            
+            // Add Bootstrap classes to form fields if they're missing
+            document.querySelectorAll('input, select, textarea').forEach(field => {
+                if (!field.classList.contains('form-control')) {
+                    field.classList.add('form-control');
+                }
+            });
+        });
+    </script>
+</body>
+{% endblock %}

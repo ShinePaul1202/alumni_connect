@@ -1,0 +1,196 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Settings | AluLink{% endblock %}
+
+{% block content %}
+<head>
+    <!-- CSS and Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- =================================================================== -->
+    <!-- == CSS COPIED DIRECTLY FROM YOUR DASHBOARD TEMPLATE FOR ACCURACY == -->
+    <!-- =================================================================== -->
+    <style>
+        :root {
+            --sidebar-bg: #1e293b;
+            --main-bg: #f8fafc;
+            --text-dark: #0f172a;
+            --text-light: #e2e8f0;
+            --text-muted: #64748b;
+            --primary-color: #3b82f6;
+            --border-color: #e2e8f0;
+            --card-bg: white;
+            --shadow-color: rgba(99, 102, 241, 0.1);
+            --sidebar-width: 260px;
+        }
+
+        body {
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .dashboard-container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            padding: 1.5rem;
+            flex-shrink: 0;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Sidebar Navigation Styles from Dashboard */
+        .sidebar-nav .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            color: var(--text-light);
+            text-decoration: none;
+            border-left: 3px solid transparent; /* Crucial for the hover effect */
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        
+        /* THE EXACT HOVER EFFECT YOU WANTED */
+        .sidebar-nav .nav-item:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.07);
+            border-left-color: var(--primary-color);
+        }
+
+        .sidebar-nav .nav-item.active {
+            background-color: var(--primary-color);
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .sidebar-nav .nav-item.disabled {
+            color: #64748b; /* Muted text color */
+            pointer-events: none; /* Disables clicking */
+            background-color: transparent;
+        }
+
+        .sidebar-nav .nav-item.disabled:hover {
+            background-color: transparent; /* No hover effect */
+            border-left-color: transparent;
+        }
+
+        .sidebar-nav .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .main-header .h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        /* Styles for the settings card in the main content area */
+        .settings-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+        }
+        .action-list { display: flex; flex-direction: column; }
+        .action-list-item { display: flex; align-items: center; padding: 1.25rem; text-decoration: none; color: var(--text-dark); border-radius: 0.75rem; transition: background-color 0.2s ease-in-out; font-weight: 500; font-size: 1.05rem; }
+        .action-list-item:not(:last-child) { border-bottom: 1px solid var(--border-color); }
+        .action-list-item:hover { background-color: #f8fafc; }
+        .action-list-item .icon { color: var(--text-muted); width: 24px; margin-right: 1.5rem; text-align: center; font-size: 1.1rem; }
+        .action-list-item .chevron { margin-left: auto; color: var(--text-muted); font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Main Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <a href="{% url 'core:home' %}" class="brand-logo"><span>AluLink</span></a>
+            
+            <!-- Sidebar Navigation - HTML structure matches the dashboard -->
+            <nav class="sidebar-nav mt-3">
+                {% if profile.user_type == 'alumni' %}
+                    <a href="{% url 'core:alumni_dashboard' %}" class="nav-item">
+                        <i class="fa-solid fa-table-columns fa-fw"></i>
+                        <span>Dashboard</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'core:student_dashboard' %}" class="nav-item">
+                        <i class="fa-solid fa-table-columns fa-fw"></i>
+                        <span>Dashboard</span>
+                    </a>
+                {% endif %}
+                
+                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}">
+                    <i class="fa-solid fa-users fa-fw"></i>
+                    <span>Find Alumni</span>
+                </a>
+                
+                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}">
+                    <i class="fa-solid fa-envelope fa-fw"></i>
+                    <span>Messages</span>
+                </a>
+                
+                <!-- This is now the active link -->
+                <a href="{% url 'core:account_settings' %}" class="nav-item active">
+                    <i class="fa-solid fa-gear fa-fw"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area (Unchanged) -->
+        <main class="main-content">
+            <div class="main-header mb-4">
+                <h1 class="h1">Settings</h1>
+                <p class="text-muted fs-5">Manage your account, password, and notification preferences.</p>
+            </div>
+
+            <div class="settings-card mt-4">
+                <div class="action-list">
+                    <a href="{% url 'core:account_details' %}" class="action-list-item">
+                        <i class="icon fa-solid fa-user-gear fa-fw"></i>
+                        <span>Account Details</span>
+                        <i class="chevron fa-solid fa-chevron-right"></i>
+                    </a>
+                    <a href="{% url 'core:password_security' %}" class="action-list-item">
+                        <i class="icon fa-solid fa-shield-halved fa-fw"></i>
+                        <span>Password & Security</span>
+                        <i class="chevron fa-solid fa-chevron-right"></i>
+                    </a>
+                    <a href="{% url 'core:notification_settings' %}" class="action-list-item">
+                        <i class="icon fa-solid fa-bell fa-fw"></i>
+                        <span>Notifications</span>
+                        <i class="chevron fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+{% endblock %}

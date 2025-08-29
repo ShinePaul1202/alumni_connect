@@ -47,6 +47,19 @@
         body.sidebar-collapsed .sidebar { margin-left: calc(-1 * var(--sidebar-width)); }
         body.sidebar-collapsed .main-content { width: 100%; }
         @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1.5rem; } .header-title { display: none; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } }
+
+        /* == BEGIN ADDITION: Style for disabled links == */
+        .sidebar-nav .nav-item.disabled {
+            color: #64748b; /* Muted text color */
+            pointer-events: none; /* Disables clicking */
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+        .sidebar-nav .nav-item.disabled:hover {
+            background-color: transparent; /* No hover effect */
+            border-left-color: transparent;
+        }
+        /* == END ADDITION == */
     </style>
 </head>
 
@@ -54,18 +67,34 @@
     <div class="dashboard-container">
         <div class="overlay" id="overlay"></div>
         <aside class="sidebar" id="sidebar">
-            <!-- Sidebar content is unchanged -->
             <a href="{% url 'core:home' %}" class="brand-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg><span>AluLink</span></a>
+            
+            <!-- ============================================= -->
+            <!-- == BEGIN MODIFICATION: Conditional Sidebar Links == -->
+            <!-- ============================================= -->
             <nav class="sidebar-nav mt-3">
                 <a href="{% url 'core:alumni_dashboard' %}" class="nav-item active"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                
+                {% if profile.is_verified %}
+                    <a href="#" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                {% else %}
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                {% endif %}
+                <a href="{% url 'core:account_settings' %}" class="nav-item">
+                    <i class="fa-solid fa-gear fa-fw"></i>
+                    <span>Settings</span>
+                </a>
+
             </nav>
+            <!-- ============================================= -->
+            <!-- == END MODIFICATION                        == -->
+            <!-- ============================================= -->
         </aside>
 
         <main class="main-content">
             <header class="main-header">
-                <!-- Header content is unchanged -->
                 <div class="d-flex align-items-center">
                     <button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button"><i class="fa-solid fa-bars"></i></button>
                     <div class="header-title">
@@ -79,21 +108,31 @@
                     </div>
                     <div class="profile-dropdown-menu">
                         <a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a>
-                        <a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i> Account Settings</a>
+                        <a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i>Settings</a>
                         <hr class="my-1"><a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a>
                     </div>
                 </div>
             </header>
 
-            <!-- Verification Alerts are unchanged -->
+            <!-- == BEGIN ADDITION: Display messages from middleware == -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            <!-- == END ADDITION == -->
+
             {% if profile.fraud_warning %}
             <div class="alert alert-danger mb-4" role="alert"><h4 class="alert-heading fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Account Warning</h4><p>{{ profile.fraud_warning }}</p></div>
             {% elif not profile.is_verified %}
             <div class="alert alert-info mb-4" role="alert"><h4 class="alert-heading fw-bold"><i class="fa-solid fa-hourglass-half me-2"></i>Verification Pending</h4><p class="mb-0">Your account is awaiting verification by an administrator. Core networking features will be unlocked once your profile is approved.</p></div>
             {% endif %}
 
-            <!-- "Overview" section is unchanged -->
             <section class="dashboard-section">
+                <!-- The rest of your template is completely unchanged -->
                 <h2 class="section-title">Overview</h2>
                 <div class="row g-4"><div class="col-md-6"><div class="card stat-card p-4"><div class="d-flex align-items-center gap-4"><div class="card-icon alumni-icon"><i class="fa-solid fa-handshake"></i></div><div><h3>0</h3><p class="mb-0 text-muted">Your Connections</p></div></div></div></div><div class="col-md-6"><div class="card stat-card p-4"><div class="d-flex align-items-center gap-4"><div class="card-icon messages-icon"><i class="fa-solid fa-paper-plane"></i></div><div><h3>{{ student_message_count }}</h3><p class="mb-0 text-muted">Student Messages</p></div></div></div></div></div>
             </section>
@@ -110,18 +149,11 @@
                                     
                                     <div class="flex-grow-1">
                                         <h5 class="mb-0 fw-semibold">{{ alumni_profile.full_name|default:alumni_profile.user.username }}</h5>
-                                        
-                                        <!-- ============================================= -->
-                                        <!-- == BEGIN MODIFICATION: Details are now added == -->
-                                        <!-- ============================================= -->
                                         <p class="mb-0 text-muted small">
                                             {{ alumni_profile.job_title|default:"Position not listed" }}
                                             {% if alumni_profile.department %}&bull; {{ alumni_profile.department }}{% endif %}
                                             {% if alumni_profile.graduation_year %}&bull; Graduated {{ alumni_profile.graduation_year }}{% endif %}
                                         </p>
-                                        <!-- ============================================= -->
-                                        <!-- == END MODIFICATION                        == -->
-                                        <!-- ============================================= -->
                                     </div>
                                     
                                     <a href="#" class="btn btn-outline-primary btn-sm">View Profile</a>
@@ -132,7 +164,6 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <!-- Unverified placeholder is unchanged -->
                     <div class="card text-center py-5"><div class="card-body"><i class="fa-solid fa-lock mb-3" style="font-size: 3rem; color: #cbd5e1;"></i><p class="mb-0 text-muted fw-500">This feature is available after your profile has been verified.</p></div></div>
                 {% endif %}
             </section>
@@ -140,6 +171,7 @@
     </div>
 
     <!-- Script is unchanged -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script> document.addEventListener('DOMContentLoaded', function () { const toggleButton = document.getElementById('sidebar-toggle-btn'); const overlay = document.getElementById('overlay'); const body = document.body; if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); } if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); } }); </script>
 </body>
 {% endblock %}
