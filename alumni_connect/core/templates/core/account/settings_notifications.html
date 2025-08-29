@@ -5,70 +5,146 @@
 
 {% block content %}
 <head>
-    <!-- CSS copied from your dashboard for identical design -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- CSS and Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <style>
-        :root { --sidebar-bg: #1e293b; --main-bg: #f8fafc; --text-dark: #0f172a; --text-light: #e2e8f0; --text-muted: #64748b; --primary-color: #3b82f6; --border-color: #e2e8f0; --card-bg: white; --shadow-color: rgba(99, 102, 241, 0.1); --sidebar-width: 260px; }
-        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; }
-        .dashboard-container { display: flex; }
-        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; flex-shrink: 0; height: 100vh; position: sticky; top: 0; }
+        :root {
+            --sidebar-bg: #1e293b;
+            --main-bg: #f8fafc;
+            --text-dark: #0f172a;
+            --text-light: #e2e8f0;
+            --text-muted: #64748b;
+            --primary-color: #3b82f6;
+            --border-color: #e2e8f0;
+            --card-bg: white;
+            --shadow-color: rgba(99, 102, 241, 0.1);
+            --sidebar-width: 260px;
+        }
+
+        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; overflow-x: hidden; }
+        .dashboard-container { display: flex; position: relative; }
+
+        /* --- Sidebar Styles --- */
+        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease; }
         .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
-        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; transition: background-color 0.2s ease; }
-        .sidebar-nav .nav-item:hover { background-color: rgba(255, 255, 255, 0.07); }
+        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
+        .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); border-left-color: var(--primary-color); }
         .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
-        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; }
-        .main-content { flex-grow: 1; padding: 2.5rem; width: calc(100% - var(--sidebar-width)); }
-        .card { background-color: var(--card-bg); border: none; border-radius: 1rem; box-shadow: 0 4px 6px var(--shadow-color); }
+        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; background-color: transparent; }
+        .sidebar-nav .nav-item.disabled:hover { background-color: transparent; border-left-color: transparent; }
+        .sidebar-nav .nav-item i { width: 20px; text-align: center; }
+
+        /* --- Main Content & Header Styles --- */
+        .main-content { flex-grow: 1; padding: 2.5rem; width: calc(100% - var(--sidebar-width)); transition: margin-left 0.3s ease; }
+        .header { display: flex; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
+        .btn-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-dark); text-decoration: none; transition: background-color 0.2s ease, box-shadow 0.2s ease; }
+        .btn-back:hover { background-color: #f3f4f6; border-color: #d1d5db; }
+        
+        /* --- Form Styles --- */
+        .form-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); }
+        .btn-primary { padding: 0.75rem 1.5rem; font-weight: 500; }
+
+        /* Custom styling for the notification toggle switch */
+        .notification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .form-switch.form-switch-lg .form-check-input {
+            height: 1.5rem;
+            width: 3rem;
+        }
+        .form-switch.form-switch-lg .form-check-label {
+            padding-left: 0.5rem;
+        }
+
+        /* --- Responsive Styles --- */
+        .sidebar-toggle { display: none; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        @media (max-width: 991.98px) {
+            .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.3s ease; }
+            .main-content { width: 100%; padding: 1.5rem; }
+            .sidebar-toggle { display: block; background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; width: 40px; height: 40px; }
+            body.sidebar-visible .sidebar { transform: translateX(0); }
+            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
+        }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
+        <div class="overlay" id="overlay"></div>
         <!-- Main Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <a href="{% url 'core:home' %}" class="brand-logo"><span>AluLink</span></a>
+            <!-- LOGO IS NOW THE SVG FROM THE DASHBOARD -->
+            <a href="{% url 'core:home' %}" class="brand-logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg>
+                <span>AluLink</span>
+            </a>
             <nav class="sidebar-nav mt-3">
                 {% if profile.user_type == 'alumni' %}
-                    <a href="{% url 'core:alumni_dashboard' %}" class="nav-item"><span>Dashboard</span></a>
+                    <a href="{% url 'core:alumni_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
                 {% else %}
-                    <a href="{% url 'core:student_dashboard' %}" class="nav-item"><span>Dashboard</span></a>
+                    <a href="{% url 'core:student_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
                 {% endif %}
-                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><span>Find Alumni</span></a>
-                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><span>Messages</span></a>
-                <a href="{% url 'core:account_settings' %}" class="nav-item active"><span>Settings</span></a>
+                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                <a href="{% url 'core:account_settings' %}" class="nav-item active"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
             </nav>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Breadcrumb Navigation -->
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb bg-transparent p-0 m-0">
-                    <li class="breadcrumb-item"><a href="{% url 'core:account_settings' %}">Settings</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Notifications</li>
-                </ol>
-            </nav>
-            
-            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }} mt-4">{{ message }}</div>{% endfor %}{% endif %}
+            <div class="header">
+                <button class="sidebar-toggle" id="sidebar-toggle-btn"><i class="fa-solid fa-bars"></i></button>
+                <a href="{% url 'core:account_settings' %}" class="btn-back" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
+            </div>
 
-            <!-- Form Content -->
-            <div class="card mt-4"><div class="card-body p-4">
-                <h3 class="fw-bold">Notification Settings</h3>
-                <p class="text-muted">Control how you receive notifications from AluLink.</p>
-                <hr class="my-4">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="form-check form-switch fs-5 p-0 d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <label class="form-check-label fw-semibold" for="{{ settings_form.email_on_new_message.id_for_label }}">{{ settings_form.email_on_new_message.label }}</label>
-                            <p class="text-muted small mb-0">Receive an email when a new message arrives in your inbox.</p>
+            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}
+            
+            <div class="form-card">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="h3 fw-bold mb-1">Notification Settings</h2>
+                    <p class="text-muted mb-4">Control how you receive notifications from AluLink.</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="notification-item">
+                            <!-- Text on the left -->
+                            <div>
+                                <label class="form-check-label fw-semibold" for="{{ settings_form.email_on_new_message.id_for_label }}">
+                                    {{ settings_form.email_on_new_message.label }}
+                                </label>
+                                <p class="text-muted small mb-0">Receive an email when a new message arrives in your inbox.</p>
+                            </div>
+                            <!-- Toggle switch on the right -->
+                            <div class="form-check form-switch form-switch-lg">
+                                {{ settings_form.email_on_new_message }}
+                            </div>
                         </div>
-                        {{ settings_form.email_on_new_message }}
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-4">Save Preferences</button>
-                </form>
-            </div></div>
+
+                        <hr class="my-4">
+                        <button type="submit" class="btn btn-primary">Save Preferences</button>
+                    </form>
+                </div>
+            </div>
         </main>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleButton = document.getElementById('sidebar-toggle-btn');
+            const overlay = document.getElementById('overlay');
+            const body = document.body;
+            if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
+            if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }
+        });
+    </script>
 </body>
 {% endblock %}

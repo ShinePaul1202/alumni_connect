@@ -94,7 +94,7 @@ class AccountUserUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AccountUserUpdateForm, self).__init__(*args, **kwargs)
-        self.fields['username'].disabled = True
+        # self.fields['username'].disabled = True
         self.fields['username'].required = False
 
 class AccountProfileUpdateForm(forms.ModelForm):

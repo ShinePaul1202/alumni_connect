@@ -24,6 +24,11 @@ class Profile(models.Model):
 
     # This field will store any warnings issued by an admin.
     fraud_warning = models.TextField(blank=True, null=True)
+
+    has_edited_critical_details = models.BooleanField(
+        default=False, 
+        help_text="Tracks if the user has used their one-time edit for critical details."
+    )
     
     # Current Job Info
     currently_employed = models.BooleanField(default=False)

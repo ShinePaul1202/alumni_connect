@@ -150,12 +150,31 @@ def account_details_view(request):
     Handles updating the user's non-sensitive account info like email, department, etc.
     This view corresponds to the "Account Details" tab.
     """
+    profile = request.user.profile
+
+    # This condition is TRUE only if the user has NOT used their one-time edit yet,
+    # AND their account is either unverified OR has a fraud warning.
+    can_edit_critical_details = (
+        not profile.has_edited_critical_details and
+        (not profile.is_verified or profile.fraud_warning)
+    )
+
     if request.method == 'POST':
         # We use the forms you already created
         user_form = AccountUserUpdateForm(request.POST, instance=request.user)
         profile_form = AccountProfileSettingsForm(request.POST, instance=request.user.profile)
 
         if user_form.is_valid() and profile_form.is_valid():
+            if can_edit_critical_details:
+                # Check which fields the user actually changed in the form submission.
+                changed_data = user_form.changed_data + profile_form.changed_data
+                critical_fields = ['username', 'department', 'graduation_year']
+                
+                # If any of the critical fields were modified, set the flag to True.
+                # This will prevent future edits.
+                if any(field in changed_data for field in critical_fields):
+                    profile.has_edited_critical_details = True
+
             user_form.save()
             profile_form.save()
             messages.success(request, 'Your account details have been updated successfully.')
@@ -167,11 +186,17 @@ def account_details_view(request):
         user_form = AccountUserUpdateForm(instance=request.user)
         profile_form = AccountProfileSettingsForm(instance=request.user.profile)
 
+    if not can_edit_critical_details:
+        user_form.fields['username'].disabled = True
+        profile_form.fields['department'].disabled = True
+        profile_form.fields['graduation_year'].disabled = True
+
     context = {
         'profile': request.user.profile,
         'user_form': user_form,
         'profile_form': profile_form,
-        'active_tab': 'details'  # This is used by the template to highlight the correct link
+        'active_tab': 'details',  # This is used by the template to highlight the correct link
+        'can_edit_critical_details': can_edit_critical_details,  # Pass this to the template
     }
     return render(request, 'core/account/settings_details.html', context)
 
