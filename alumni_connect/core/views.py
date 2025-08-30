@@ -13,6 +13,7 @@ from .forms import (
     AccountUserUpdateForm, AccountProfileUpdateForm, AccountProfileSettingsForm
 )
 from .models import Profile
+from .decorators import verification_required
 
 # --- AUTH & ROUTING VIEWS ---
 def home_view(request):
@@ -73,7 +74,13 @@ def logout_view(request):
 # --- USER-SPECIFIC DASHBOARD AND PROFILE VIEWS ---
 @login_required
 def student_dashboard_view(request):
-    profile = request.user.profile
+    try:
+        profile = request.user.profile
+    except Profile.DoesNotExist:
+        # If the profile is missing, log the user out safely instead of crashing.
+        messages.error(request, "Your user profile could not be found. Please contact support.")
+        logout(request)
+        return redirect('core:login')
     if profile.is_verified and not profile.has_seen_verification_message:
         messages.success(request, "Congratulations! Your account has been successfully verified. You now have full access to the platform.")
         
@@ -93,7 +100,13 @@ def student_dashboard_view(request):
 
 @login_required
 def alumni_dashboard_view(request):
-    profile = request.user.profile
+    try:
+        profile = request.user.profile
+    except Profile.DoesNotExist:
+        # If the profile is missing, log the user out safely instead of crashing.
+        messages.error(request, "Your user profile could not be found. Please contact support.")
+        logout(request)
+        return redirect('core:login')
     if profile.is_verified and not profile.has_seen_verification_message:
         
         # 1. Add the success message that will be displayed in the template.
@@ -132,6 +145,28 @@ def profile_update_view(request):
     profile = request.user.profile 
     context = { 'u_form': u_form, 'p_form': p_form, 'profile': profile }
     return render(request, 'core/profile_update.html', context)
+
+@login_required
+@verification_required
+def find_alumni(request):
+    # Only fetch verified alumni (not students)
+    alumni_list = Profile.objects.filter(
+        is_verified=True,
+        user__groups__name="Alumni"  # assuming you separate Students vs Alumni via groups
+    ).exclude(user=request.user)
+
+    # Optional: add filters (department, graduation_year, etc.)
+    department = request.GET.get("department")
+    if department:
+        alumni_list = alumni_list.filter(department__icontains=department)
+
+    graduation_year = request.GET.get("year")
+    if graduation_year:
+        alumni_list = alumni_list.filter(graduation_year=graduation_year)
+
+    return render(request, "core/find_alumni.html", {
+        "alumni_list": alumni_list,
+    })
 
 @login_required
 def settings_home_view(request):
@@ -219,6 +254,9 @@ def password_security_view(request):
             messages.error(request, 'There was an error updating your password. Please check the details below.')
     else:
         password_form = PasswordChangeForm(request.user)
+
+    for field_name, field in password_form.fields.items():
+        field.widget.attrs.update({'class': 'form-control'})
 
     context = {
         'profile': request.user.profile,

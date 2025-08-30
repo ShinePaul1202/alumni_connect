@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Find Alumni | AluLink{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Find Alumni</h2>
+
+    <!-- Optional Filters -->
+    <form method="get" class="mb-4 row g-2">
+        <div class="col-md-4">
+            <input type="text" name="department" placeholder="Search by Department"
+                   value="{{ request.GET.department }}" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="year" placeholder="Graduation Year"
+                   value="{{ request.GET.year }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+    </form>
+
+    <!-- Alumni Results -->
+    <div class="row g-3">
+        {% for alumni in alumni_list %}
+        <div class="col-md-6">
+            <div class="card p-3 alumni-list-card d-flex align-items-center gap-3">
+                <img class="alumni-card-img" src="{{ alumni.avatar.url }}" alt="{{ alumni.full_name }}">
+                <div class="flex-grow-1">
+                    <h5 class="mb-0">{{ alumni.full_name|default:alumni.user.username }}</h5>
+                    <p class="mb-0 text-muted small">
+                        {{ alumni.department }}
+                        {% if alumni.graduation_year %} • {{ alumni.graduation_year }}{% endif %}
+                    </p>
+                </div>
+                <a href="{% url 'core:profile' %}?id={{ alumni.user.id }}" class="btn btn-outline-primary btn-sm">View</a>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No alumni found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

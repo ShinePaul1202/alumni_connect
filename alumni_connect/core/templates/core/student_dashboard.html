@@ -47,6 +47,17 @@
         body.sidebar-collapsed .sidebar { margin-left: calc(-1 * var(--sidebar-width)); }
         body.sidebar-collapsed .main-content { width: 100%; }
         @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1.5rem; } .header-title { display: none; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } }
+        /* Style for disabled links */
+        .sidebar-nav .nav-item.disabled {
+            color: #64748b; /* Muted text color */
+            pointer-events: none; /* Disables clicking */
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+        .sidebar-nav .nav-item.disabled:hover {
+            background-color: transparent; /* No hover effect */
+            border-left-color: transparent;
+        }
     </style>
 </head>
 
@@ -57,10 +68,32 @@
             <!-- Sidebar content is unchanged -->
             <a href="{% url 'core:home' %}" class="brand-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg><span>AluLink</span></a>
             <nav class="sidebar-nav mt-3">
-                <a href="{% url 'core:student_dashboard' %}" class="nav-item active"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
-                <a href="{% url 'core:account_settings' %}" class="nav-item"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
+                <!-- Dashboard Link (Dynamically set 'active' class) -->
+                {% if profile.user_type == 'student' %}
+                    <a href="{% url 'core:student_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'core:alumni_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'alumni_dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
+                    </a>
+                {% endif %}
+
+                <!-- THE CORE LOGIC: Check if user is verified AND NOT fraudulent -->
+                {% if profile.is_verified and not profile.fraud_warning %}
+                    <!-- Unlocked Links -->
+                    <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                {% else %}
+                    <!-- Locked Links -->
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                {% endif %}
+                
+                <!-- Settings Link -->
+                <a href="{% url 'core:account_settings' %}" class="nav-item {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fa-solid fa-gear fa-fw"></i><span>Settings</span>
+                </a>
             </nav>
         </aside>
 

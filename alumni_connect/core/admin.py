@@ -10,21 +10,37 @@ admin.site.unregister(User)
 @admin.action(description='Verify selected user profiles')
 def verify_selected_profiles(modeladmin, request, queryset):
     """ Action to verify users and clear any fraud warnings. """
-    profile_ids = queryset.values_list('profile__id', flat=True)
-    Profile.objects.filter(id__in=profile_ids).update(
-        is_verified=True, 
+    user_ids = queryset.values_list('id', flat=True)
+    
+    # THE FIX IS HERE: Removed the ", _"
+    profiles_updated = Profile.objects.filter(user_id__in=user_ids).update(
+        is_verified=True,
         fraud_warning=None,
-        has_seen_verification_message=True
+        has_seen_verification_message=False
     )
-    modeladmin.message_user(request, "Selected users have been successfully verified.", messages.SUCCESS)
+    
+    if profiles_updated > 0:
+        modeladmin.message_user(request, f"{profiles_updated} user(s) have been successfully verified.", messages.SUCCESS)
+    else:
+        modeladmin.message_user(request, "No profiles were found to verify for the selected users.", messages.WARNING)
+
 
 @admin.action(description='Mark selected users as fraudulent')
 def mark_as_fraudulent(modeladmin, request, queryset):
     """ Action to un-verify users and add a fraud warning. """
     reason = "This account has been flagged for violating platform policies. Please contact support for assistance."
-    profile_ids = queryset.values_list('profile__id', flat=True)
-    Profile.objects.filter(id__in=profile_ids).update(is_verified=False, fraud_warning=reason)
-    modeladmin.message_user(request, "Selected users have been marked as fraudulent.", messages.WARNING)
+    user_ids = queryset.values_list('id', flat=True)
+
+    # This code UPDATES the existing profile. It DOES NOT delete it.
+    profiles_updated = Profile.objects.filter(user_id__in=user_ids).update(
+        is_verified=False,
+        fraud_warning=reason
+    )
+
+    if profiles_updated > 0:
+        modeladmin.message_user(request, f"{profiles_updated} user(s) have been marked as fraudulent.", messages.WARNING)
+    else:
+        modeladmin.message_user(request, "No profiles were found to mark as fraudulent for the selected users.", messages.WARNING)
 
 
 @admin.register(User)

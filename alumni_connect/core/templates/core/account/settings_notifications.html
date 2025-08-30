@@ -91,7 +91,7 @@
                 {% else %}
                     <a href="{% url 'core:student_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
                 {% endif %}
-                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                <a href="{% url 'core:find_alumni' %}" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
                 <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
                 <a href="{% url 'core:account_settings' %}" class="nav-item active"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
             </nav>

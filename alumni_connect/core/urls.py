@@ -20,6 +20,9 @@ urlpatterns = [
     # Profile viewing and updating
     path('profile/update/', views.profile_update_view, name='profile_update'),
     path('profile/', views.profile_view, name='profile'),
+
+    path("find-alumni/", views.find_alumni, name="find_alumni"),
+    
     # NEW "Settings Home" URL: This is the new entry point for the settings menu.
     path('account/settings/', views.settings_home_view, name='account_settings'),
     

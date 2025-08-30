@@ -147,7 +147,7 @@
                     </a>
                 {% endif %}
                 
-                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}">
+                <a href="{% url 'core:find_alumni' %}" class="nav-item {% if not profile.is_verified %}disabled{% endif %}">
                     <i class="fa-solid fa-users fa-fw"></i>
                     <span>Find Alumni</span>
                 </a>

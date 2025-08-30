@@ -48,7 +48,7 @@
         body.sidebar-collapsed .main-content { width: 100%; }
         @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1.5rem; } .header-title { display: none; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } }
 
-        /* == BEGIN ADDITION: Style for disabled links == */
+        /*Style for disabled links == */
         .sidebar-nav .nav-item.disabled {
             color: #64748b; /* Muted text color */
             pointer-events: none; /* Disables clicking */
@@ -59,7 +59,6 @@
             background-color: transparent; /* No hover effect */
             border-left-color: transparent;
         }
-        /* == END ADDITION == */
     </style>
 </head>
 
@@ -73,20 +72,32 @@
             <!-- == BEGIN MODIFICATION: Conditional Sidebar Links == -->
             <!-- ============================================= -->
             <nav class="sidebar-nav mt-3">
-                <a href="{% url 'core:alumni_dashboard' %}" class="nav-item active"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
-                
-                {% if profile.is_verified %}
-                    <a href="#" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                <!-- Dashboard Link (Dynamically set 'active' class) -->
+                {% if profile.user_type == 'student' %}
+                    <a href="{% url 'core:student_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'core:alumni_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'alumni_dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
+                    </a>
+                {% endif %}
+
+                <!-- THE CORE LOGIC: Check if user is verified AND NOT fraudulent -->
+                {% if profile.is_verified and not profile.fraud_warning %}
+                    <!-- Unlocked Links -->
+                    <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
                     <a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
                 {% else %}
+                    <!-- Locked Links -->
                     <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
                     <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
                 {% endif %}
-                <a href="{% url 'core:account_settings' %}" class="nav-item">
-                    <i class="fa-solid fa-gear fa-fw"></i>
-                    <span>Settings</span>
+                
+                <!-- Settings Link -->
+                <a href="{% url 'core:account_settings' %}" class="nav-item {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fa-solid fa-gear fa-fw"></i><span>Settings</span>
                 </a>
-
             </nav>
             <!-- ============================================= -->
             <!-- == END MODIFICATION                        == -->
