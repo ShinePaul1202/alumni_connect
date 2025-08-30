@@ -11,7 +11,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
 
     # --- Profile Picture and Bio ---
-    avatar = models.ImageField(default='avatars/default_avatar.png', upload_to='avatars/')
+    avatar = models.ImageField(default='avatars/default_avatar.png', upload_to='avatars/', blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     full_name = models.CharField(max_length=150)
 

@@ -1,6 +1,6 @@
 # C:\project\alumni_connect\core\views.py
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -125,8 +125,13 @@ def alumni_dashboard_view(request):
 
 @login_required
 def profile_view(request):
-    profile = request.user.profile
-    context = {'profile': profile}
+    # Get the logged-in user's profile
+    user_profile = get_object_or_404(Profile, user=request.user)
+
+    context = {
+        'profile': user_profile,        # For the header/sidebar (logged-in user)
+        'viewed_profile': user_profile  # For the main content (it's the same person!)
+    }
     return render(request, 'core/profile_page.html', context)
 
 @login_required
@@ -148,11 +153,32 @@ def profile_update_view(request):
 
 @login_required
 @verification_required
+def profile_page_view(request, user_id):
+    """
+    Displays the profile page for a specific user, identified by their user_id.
+    """
+    # Fetch the profile of the user whose ID is in the URL
+    # This is the profile that will be displayed on the page.
+    viewed_profile = get_object_or_404(Profile, user__id=user_id)
+    
+    # Also fetch the logged-in user's profile for the header and sidebar.
+    user_profile = get_object_or_404(Profile, user=request.user)
+
+    context = {
+        'profile': user_profile,         # For the header/sidebar (logged-in user)
+        'viewed_profile': viewed_profile, # For the main content (the profile being viewed)
+    }
+    
+    # This renders the template that shows the profile details.
+    return render(request, 'core/profile_page.html', context)
+
+@login_required
+@verification_required
 def find_alumni(request):
     # Only fetch verified alumni (not students)
     alumni_list = Profile.objects.filter(
         is_verified=True,
-        user__groups__name="Alumni"  # assuming you separate Students vs Alumni via groups
+        user_type="alumni"  # It's better to filter on your model's user_type field
     ).exclude(user=request.user)
 
     # Optional: add filters (department, graduation_year, etc.)
@@ -164,8 +190,12 @@ def find_alumni(request):
     if graduation_year:
         alumni_list = alumni_list.filter(graduation_year=graduation_year)
 
+    # === FIX STEP 1: Get the logged-in user's profile ===
+    user_profile = get_object_or_404(Profile, user=request.user)
+
     return render(request, "core/find_alumni.html", {
         "alumni_list": alumni_list,
+        "profile": user_profile,  # Add the profile to the context
     })
 
 @login_required

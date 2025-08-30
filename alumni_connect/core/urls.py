@@ -19,6 +19,9 @@ urlpatterns = [
 
     # Profile viewing and updating
     path('profile/update/', views.profile_update_view, name='profile_update'),
+    # View OTHER users' profiles by their ID
+    path('profile/<int:user_id>/', views.profile_page_view, name='profile_page'),
+
     path('profile/', views.profile_view, name='profile'),
 
     path("find-alumni/", views.find_alumni, name="find_alumni"),

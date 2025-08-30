@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% block title %}{% if profile.user.first_name %}{{ profile.user.first_name }}'s Profile{% else %}My Profile{% endif %} | AluLink{% endblock %}
+{% block title %}{{ viewed_profile.full_name }}'s Profile | AluLink{% endblock %}
 {% block content %}
 <head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -70,37 +70,43 @@
         <main class="main-content">
             <header class="main-header">
                 <div class="d-flex align-items-center">
-                    <button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button"><i class="fa-solid fa-bars"></i></button>
+                    <!-- ... -->
                     <div class="header-title">
-                        <h1 class="main-title">My Profile</h1>
-                        <p class="main-subtitle d-none d-lg-block">Your personal and professional information on AluLink.</p>
+                        <!-- Dynamically change the title -->
+                        <h1 class="main-title">{{ viewed_profile.full_name }}</h1>
+                        <p class="main-subtitle d-none d-lg-block">Viewing the profile of a {{ viewed_profile.user_type }}.</p>
                     </div>
                 </div>
-                <a href="{% url 'core:profile_update' %}" class="btn-primary"><i class="fa-solid fa-pencil me-2"></i>Edit Profile</a>
+                <!-- Only show the "Edit Profile" button if you are viewing your OWN profile -->
+                {% if viewed_profile.user == request.user %}
+                    <a href="{% url 'core:profile_update' %}" class="btn-primary"><i class="fa-solid fa-pencil me-2"></i>Edit Profile</a>
+                {% else %}
+                    <a href="#" class="btn-primary"><i class="fa-solid fa-paper-plane me-2"></i>Send Message</a>
+                {% endif %}
             </header>
             <div class="profile-grid">
                 <div class="card p-4 profile-card-left">
-                    <img src="{% if profile.avatar.url %}{{ profile.avatar.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="Profile Picture" class="profile-avatar">
-                    <h2 class="profile-name">{{ profile.user.first_name|default:profile.user.username }} {{ profile.user.last_name }}</h2>
+                    <img src="{% if viewed_profile.avatar.url %}{{ viewed_profile.avatar.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="Profile Picture" class="profile-avatar">
+                    <h2 class="profile-name">{{ viewed_profile.full_name }}</h2>
                     <hr class="profile-divider">
                     <div class="profile-details">
-                        <p><i class="fa-solid fa-building-columns"></i> <strong>Department:</strong> {{ profile.department|default:"Not set" }}</p>
-                        <p><i class="fa-solid fa-calendar-check"></i> <strong>Graduation Year:</strong> {{ profile.graduation_year|default:"Not set" }}</p>
-                        <p><i class="fa-solid fa-envelope"></i> <strong>Email:</strong> {{ profile.user.email }}</p>
+                        <p><i class="fa-solid fa-building-columns"></i> <strong>Department:</strong> {{ viewed_profile.department|default:"Not set" }}</p>
+                        <p><i class="fa-solid fa-calendar-check"></i> <strong>Graduation Year:</strong> {{ viewed_profile.graduation_year|default:"Not set" }}</p>
+                        <p><i class="fa-solid fa-envelope"></i> <strong>Email:</strong> {{ viewed_profile.user.email }}</p>
                     </div>
                 </div>
                 <div class="card p-4">
                     <div class="profile-section">
-                        <h3 class="profile-section-title">About Me</h3>
-                        {% if profile.bio %}<p class="profile-bio">{{ profile.bio|linebreaksbr }}</p>{% else %}<p class="profile-bio-placeholder">You haven't added a bio yet. Click 'Edit Profile' to add one!</p>{% endif %}
+                        <h3 class="profile-section-title">About</h3>
+                        {% if viewed_profile.bio %}<p class="profile-bio">{{ viewed_profile.bio|linebreaksbr }}</p>{% else %}<p class="profile-bio-placeholder">This user has not added a bio yet.</p>{% endif %}
                     </div>
-                    {% if profile.user_type == 'alumni' %}
+                    {% if viewed_profile.user_type == 'alumni' %}
                     <div class="profile-section">
                         <h3 class="profile-section-title">Work Experience</h3>
-                        {% if not profile.job_title and not profile.company_name %}<p class="profile-bio-placeholder">No work experience has been added yet.</p>{% else %}
+                        {% if not viewed_profile.job_title and not viewed_profile.company_name %}<p class="profile-bio-placeholder">No work experience has been added yet.</p>{% else %}
                             <div class="work-item">
                                 <h4>Current Role</h4>
-                                <p><i class="fa-solid fa-briefcase"></i> <strong>{{ profile.job_title|default:'Not set' }}</strong> at {{ profile.company_name|default:'Not set' }}</p>
+                                <p><i class="fa-solid fa-briefcase"></i> <strong>{{ viewed_profile.job_title|default:'Not set' }}</strong> at {{ viewed_profile.company_name|default:'Not set' }}</p>
                             </div>
                         {% endif %}
                     </div>
