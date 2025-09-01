@@ -1,3 +1,4 @@
+<!-- templates/core/profile_update.html -->
 {% extends 'core/base.html' %}
 {% load static %}
 
@@ -22,104 +23,29 @@
             --shadow-color: rgba(99, 102, 241, 0.1);
             --sidebar-width: 260px;
         }
-
-        body {
-            background-color: var(--main-bg);
-            color: var(--text-dark);
-            font-family: 'Poppins', sans-serif;
-            overflow-x: hidden;
-        }
-
+        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; overflow-x: hidden; }
         .dashboard-container { display: flex; }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--sidebar-bg);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            color: var(--text-light);
-            flex-shrink: 0;
-            height: 100vh;
-            position: sticky;
-            top: 0;
-            transition: margin-left 0.3s ease-in-out;
-        }
-
-        .brand-logo {
-            display: flex; align-items: center; gap: 0.75rem;
-            color: #fff; text-decoration: none; font-size: 1.75rem;
-            font-weight: 700; margin-bottom: 2.5rem;
-        }
-        
-        .sidebar-nav .nav-item {
-            display: flex; align-items: center; gap: 1rem;
-            padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem;
-            color: var(--text-light); text-decoration: none;
-            border-left: 3px solid transparent;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-        }
-        .sidebar-nav .nav-item:not(.active):hover {
-            background-color: rgba(255, 255, 255, 0.07);
-            border-left-color: var(--primary-color);
-        }
+        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; display: flex; flex-direction: column; color: var(--text-light); flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease-in-out; }
+        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
+        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
+        .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); border-left-color: var(--primary-color); }
         .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
         .sidebar-nav .nav-item i { width: 20px; text-align: center; }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 2.5rem;
-            transition: margin-left 0.3s ease-in-out;
-            width: calc(100% - var(--sidebar-width));
-        }
-        
-        .main-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 2.5rem;
-        }
-        
+        .main-content { flex-grow: 1; padding: 2.5rem; transition: margin-left 0.3s ease-in-out; width: calc(100% - var(--sidebar-width)); }
+        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; }
         .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; }
         .header-title .main-subtitle { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
-
-        .sidebar-toggle {
-            background: none; border: 1px solid var(--border-color);
-            border-radius: 0.5rem; color: var(--text-dark);
-            font-size: 1.25rem; padding: 0.25rem 0.75rem;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-        }
-        
-        .form-container {
-            background-color: var(--card-bg);
-            border-radius: 1rem;
-            padding: 2.5rem;
-            border: 1px solid transparent;
-            box-shadow: 0 4px 6px var(--shadow-color);
-        }
+        .sidebar-toggle { background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-dark); font-size: 1.25rem; padding: 0.25rem 0.75rem; transition: background-color 0.2s ease, border-color 0.2s ease; }
+        .form-container { background-color: var(--card-bg); border-radius: 1rem; padding: 2.5rem; border: 1px solid transparent; box-shadow: 0 4px 6px var(--shadow-color); }
         .form-section-title { font-size: 1.25rem; font-weight: 600; color: var(--text-dark); margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
         .form-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; align-items: flex-start; }
         .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-dark); }
-        .form-group input[type="text"], .form-group textarea {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
-            background-color: #fff;
-            color: var(--text-dark);
-            font-size: 0.95rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .form-group input[type="text"]:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
+        .form-group input[type="text"], .form-group textarea { width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background-color: #fff; color: var(--text-dark); font-size: 0.95rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .form-group input[type="text"]:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
         .form-group textarea { min-height: 120px; resize: vertical; }
         .form-actions { margin-top: 2rem; text-align: right; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
-
         .avatar-upload-group { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding-top: 1rem; }
         .avatar-label { position: relative; cursor: pointer; display: inline-block; border-radius: 50%; overflow: hidden; }
         .current-avatar { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-color); transition: filter 0.2s ease-in-out; }
@@ -127,13 +53,11 @@
         .avatar-overlay i { color: #fff; font-size: 2rem; }
         .avatar-label:hover .current-avatar { filter: brightness(0.7); }
         .avatar-label:hover .avatar-overlay { opacity: 1; }
-
         .checkbox-group { display: flex; align-items: center; gap: 0.75rem; }
         .checkbox-group input[type="checkbox"] { width: 1.15em; height: 1.15em; accent-color: var(--primary-color); cursor: pointer; }
         .checkbox-group label { margin: 0; font-weight: 500; cursor: pointer; }
         .work-fields-container { padding-left: 1.5rem; border-left: 2px solid var(--border-color); margin-top: 1.5rem; overflow: hidden; max-height: 500px; transition: all 0.4s ease-in-out; opacity: 1; }
         .work-fields-container.hidden { max-height: 0; padding: 0; margin-top: 0; border: none; opacity: 0; }
-        
         .btn-primary { background-color: var(--primary-color); color: #fff; border: 1px solid var(--primary-color); padding: 0.6rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; transition: all 0.2s ease; }
         .btn-primary:hover { background-color: #2563eb; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3); }
         .btn-secondary { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 0.6rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; transition: all 0.2s ease; }
@@ -142,7 +66,11 @@
         @media (max-width: 991.98px) {
             .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); }
             body.sidebar-visible .sidebar { transform: translateX(0); }
-            .main-content { width: 100%; padding: 1.5rem; }
+            .main-content {
+                width: 100%;
+                padding: 1.5rem;
+                margin-left: 0; /* <<< FIX FOR MOBILE LAYOUT */
+            }
             .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
             body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
             .form-grid { grid-template-columns: 1fr; }
@@ -154,7 +82,6 @@
 <body class="">
     <div class="dashboard-container">
         <div class="overlay" id="overlay"></div>
-
         <aside class="sidebar" id="sidebar">
             <a href="{% url 'core:home' %}" class="brand-logo">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -180,12 +107,13 @@
                     <button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button">
                         <i class="fa-solid fa-bars"></i>
                     </button>
+                    <!-- This is the clean and correct HTML block for the header title -->
                     <div class="header-title">
                         <h1 class="main-title">Edit Your Profile</h1>
                         <p class="main-subtitle">Keep your information up-to-date.</p>
                     </div>
                 </div>
-                 <a href="{% url 'core:profile' %}" class="btn-secondary">Cancel</a>
+                <a href="{% url 'core:profile' %}" class="btn-secondary">Cancel</a>
             </header>
 
             <div class="form-container">
@@ -223,12 +151,10 @@
                         </div>
                     </div>
 
-                    <!-- ===== FIX: The entire section is now wrapped in the correct IF condition ===== -->
                     {% if profile.user_type == 'alumni' %}
                     <div class="form-section mt-4 pt-4 border-top">
                         <h3 class="form-section-title">Work Experience</h3>
                         
-                        <!-- Current Job -->
                         <div class="form-group checkbox-group">
                             {{ p_form.currently_employed }}
                             <label for="{{ p_form.currently_employed.id_for_label }}">{{ p_form.currently_employed.label }}</label>
@@ -246,10 +172,8 @@
                             </div>
                         </div>
 
-                        <!-- Past Job -->
                         <div class="form-group checkbox-group mt-4">
                             {{ p_form.had_past_job }}
-                            <!-- ===== FIX: The broken label code has been corrected ===== -->
                             <label for="{{ p_form.had_past_job.id_for_label }}">{{ p_form.had_past_job.label }}</label>
                         </div>
                         <div id="past-work-fields" class="work-fields-container {% if not p_form.instance.had_past_job %}hidden{% endif %}">
