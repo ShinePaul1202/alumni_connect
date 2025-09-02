@@ -91,8 +91,34 @@
                 {% else %}
                     <a href="{% url 'core:student_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
                 {% endif %}
-                <a href="{% url 'core:find_alumni' %}" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                {% if profile.is_verified and not profile.fraud_warning %}
+                    <!-- Unlocked Links -->
+                    <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="{% url 'messaging:inbox' %}" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>
+                        {% if unread_message_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'core:connection_requests' %}" class="nav-item"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>
+                        {% if pending_request_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>
+                        {% endif %}
+                    </a>
+
+                    <!-- === MODIFICATION FOR NOTIFICATIONS BADGE === -->
+                    <a href="{% url 'core:notification_list' %}" class="nav-item"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>
+                        {% if unread_notification_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </a>
+                {% else %}
+                    <!-- Locked Links -->
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
+
+                {% endif %}
                 <a href="{% url 'core:account_settings' %}" class="nav-item active"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
             </nav>
         </aside>

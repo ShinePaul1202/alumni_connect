@@ -6,13 +6,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
+from django.db.models import Q
 from django.contrib.auth.forms import PasswordChangeForm
 # MODIFICATION: Imported the new form
 from .forms import (
     RegistrationForm, UserUpdateForm, ProfileUpdateForm, SettingsForm, 
     AccountUserUpdateForm, AccountProfileUpdateForm, AccountProfileSettingsForm
 )
-from .models import Profile
+from .models import Profile, Connection, Notification
+from django.urls import reverse
 from .decorators import verification_required
 
 # --- AUTH & ROUTING VIEWS ---
@@ -155,21 +157,27 @@ def profile_update_view(request):
 @verification_required
 def profile_page_view(request, user_id):
     """
-    Displays the profile page for a specific user, identified by their user_id.
+    Displays the profile page and checks the connection status between the
+    viewer and the profile owner.
     """
-    # Fetch the profile of the user whose ID is in the URL
-    # This is the profile that will be displayed on the page.
     viewed_profile = get_object_or_404(Profile, user__id=user_id)
-    
-    # Also fetch the logged-in user's profile for the header and sidebar.
     user_profile = get_object_or_404(Profile, user=request.user)
-
     context = {
-        'profile': user_profile,         # For the header/sidebar (logged-in user)
-        'viewed_profile': viewed_profile, # For the main content (the profile being viewed)
+        'profile': user_profile,
+        'viewed_profile': viewed_profile,
+        'connection': None  # Default to no connection
     }
-    
-    # This renders the template that shows the profile details.
+
+    # --- THIS IS THE NEW LOGIC ---
+    # We only check for a connection if the user is viewing someone else's profile. 
+    if request.user.id != viewed_profile.user.id:
+        # Find if a connection exists in either direction
+        connection = Connection.objects.filter(
+            (Q(sender=request.user, receiver=viewed_profile.user) | Q(sender=viewed_profile.user, receiver=request.user))
+        ).first()
+        context['connection'] = connection
+    # --- END OF NEW LOGIC ---
+
     return render(request, 'core/profile_page.html', context)
 
 @login_required
@@ -196,6 +204,94 @@ def find_alumni(request):
     return render(request, "core/find_alumni.html", {
         "alumni_list": alumni_list,
         "profile": user_profile,  # Add the profile to the context
+    })
+
+@login_required
+@verification_required
+def send_connection_request(request, user_id):
+    """Send a connection request to the user with the given ID."""
+    receiver = get_object_or_404(User, id=user_id)
+    sender = request.user
+
+    # Prevent sending request to oneself
+    if receiver == sender:
+        messages.error(request, "You cannot send a connection request to yourself.")
+        return redirect('core:profile_page', user_id=user_id)
+
+    # Prevent Alumni from sending requests to Students
+    if sender.profile.user_type == 'alumni' and receiver.profile.user_type == 'student':
+        messages.error(request, "Alumni cannot initiate connections with students.")
+        return redirect('core:profile_page', user_id=user_id)
+
+    # Check if a connection already exists (in either direction)
+    existing_connection = Connection.objects.filter(
+        (Q(sender=sender, receiver=receiver) | Q(sender=receiver, receiver=sender))
+    ).first()
+
+    if existing_connection:
+        messages.warning(request, "A connection request already exists with this user.")
+        return redirect('core:profile_page', user_id=user_id)
+
+    # Create the connection
+    Connection.objects.create(sender=sender, receiver=receiver)
+    messages.success(request, "Your connection request has been sent!")
+    return redirect('core:profile_page', user_id=user_id)
+
+
+@login_required
+@verification_required
+def connection_requests_list(request):
+    """Display a list of pending connection requests for the logged-in user."""
+    pending_requests = Connection.objects.filter(receiver=request.user, status=Connection.Status.PENDING)
+    return render(request, 'core/connection_requests.html', {'requests': pending_requests})
+
+
+@login_required
+@verification_required
+def respond_to_connection_request(request, request_id, action):
+    """Accept or decline a connection request and create a notification."""
+    connection_request = get_object_or_404(Connection, id=request_id, receiver=request.user)
+    
+    # The user who originally sent the request
+    sender = connection_request.sender
+
+    if action == "accept":
+        connection_request.status = Connection.Status.ACCEPTED
+        connection_request.save()
+        messages.success(request, f"You are now connected with {sender.username}.")
+
+        # Create a notification for the user who sent the request
+        Notification.objects.create(
+            recipient=sender,
+            actor=request.user,
+            verb='accepted your connection request.',
+            link=reverse('core:profile_page', kwargs={'user_id': request.user.id})
+        )
+
+    elif action == "decline":
+        # Create a notification for the user who sent the request
+        Notification.objects.create(
+            recipient=sender,
+            actor=request.user,
+            verb='declined your connection request.'
+            # No link is needed for a decline
+        )
+        connection_request.delete()
+        messages.info(request, "Connection request declined.")
+
+    return redirect('core:connection_requests')
+
+@login_required
+def notification_list_view(request):
+    """Display a list of notifications and mark them as read."""
+    notifications = Notification.objects.filter(recipient=request.user)
+    
+    # Mark all unread notifications as read when the user views the page
+    notifications.filter(is_read=False).update(is_read=True)
+    
+    return render(request, 'core/notifications.html', {
+        'notifications': notifications,
+        'profile': request.user.profile # For the sidebar
     })
 
 @login_required

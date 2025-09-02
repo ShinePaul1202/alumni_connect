@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Q
+
 
 class Profile(models.Model):
     USER_TYPE_CHOICES = [
@@ -45,3 +47,67 @@ class Profile(models.Model):
     
     def __str__(self):
         return f'{self.user.username} Profile'
+
+class Connection(models.Model):
+    """
+    Represents a connection request and its status between two users.
+    'sender' sends the request to the 'receiver'.
+    """
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        ACCEPTED = 'accepted', 'Accepted'
+        # We will simply delete declined requests for cleanliness
+
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sent_connections'
+    )
+    receiver = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='received_connections'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Ensures a user can't send multiple requests to the same person
+        unique_together = ('sender', 'receiver')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.receiver.username} ({self.get_status_display()})"
+    
+class Notification(models.Model):
+    # The user who will receive the notification
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    # The user who triggered the notification (optional)
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='+', # We don't need a reverse relationship
+        null=True, blank=True
+    )
+    # The main message (e.g., "accepted your connection request")
+    verb = models.CharField(max_length=255)
+    # A link to the relevant object (e.g., the actor's profile)
+    link = models.URLField(blank=True, null=True)
+    # Read/unread status
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.recipient.username}: {self.actor.username} {self.verb}"

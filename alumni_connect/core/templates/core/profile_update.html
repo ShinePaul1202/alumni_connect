@@ -1,247 +1,590 @@
-<!-- templates/core/profile_update.html -->
-{% extends 'core/base.html' %}
-{% load static %}
-
-{% block title %}Update Profile | AluLink{% endblock %}
-
-{% block content %}
+{% extends 'core/base.html' %} {% load static %} {% block title %}Update Profile
+| AluLink{% endblock %} {% block content %}
 <head>
-    <!-- CSS Dependencies -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <style>
-        :root {
-            --sidebar-bg: #1e293b;
-            --main-bg: #f8fafc;
-            --text-dark: #0f172a;
-            --text-light: #e2e8f0;
-            --text-muted: #64748b;
-            --primary-color: #3b82f6;
-            --border-color: #e2e8f0;
-            --card-bg: white;
-            --shadow-color: rgba(99, 102, 241, 0.1);
-            --sidebar-width: 260px;
-        }
-        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; overflow-x: hidden; }
-        .dashboard-container { display: flex; }
-        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; display: flex; flex-direction: column; color: var(--text-light); flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease-in-out; }
-        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
-        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
-        .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); border-left-color: var(--primary-color); }
-        .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
-        .sidebar-nav .nav-item i { width: 20px; text-align: center; }
-        .main-content { flex-grow: 1; padding: 2.5rem; transition: margin-left 0.3s ease-in-out; width: calc(100% - var(--sidebar-width)); }
-        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; }
-        .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; }
-        .header-title .main-subtitle { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
-        .sidebar-toggle { background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-dark); font-size: 1.25rem; padding: 0.25rem 0.75rem; transition: background-color 0.2s ease, border-color 0.2s ease; }
-        .form-container { background-color: var(--card-bg); border-radius: 1rem; padding: 2.5rem; border: 1px solid transparent; box-shadow: 0 4px 6px var(--shadow-color); }
-        .form-section-title { font-size: 1.25rem; font-weight: 600; color: var(--text-dark); margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
-        .form-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; align-items: flex-start; }
-        .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-dark); }
-        .form-group input[type="text"], .form-group textarea { width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background-color: #fff; color: var(--text-dark); font-size: 0.95rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .form-group input[type="text"]:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        .form-group textarea { min-height: 120px; resize: vertical; }
-        .form-actions { margin-top: 2rem; text-align: right; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
-        .avatar-upload-group { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding-top: 1rem; }
-        .avatar-label { position: relative; cursor: pointer; display: inline-block; border-radius: 50%; overflow: hidden; }
-        .current-avatar { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-color); transition: filter 0.2s ease-in-out; }
-        .avatar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease-in-out; }
-        .avatar-overlay i { color: #fff; font-size: 2rem; }
-        .avatar-label:hover .current-avatar { filter: brightness(0.7); }
-        .avatar-label:hover .avatar-overlay { opacity: 1; }
-        .checkbox-group { display: flex; align-items: center; gap: 0.75rem; }
-        .checkbox-group input[type="checkbox"] { width: 1.15em; height: 1.15em; accent-color: var(--primary-color); cursor: pointer; }
-        .checkbox-group label { margin: 0; font-weight: 500; cursor: pointer; }
-        .work-fields-container { padding-left: 1.5rem; border-left: 2px solid var(--border-color); margin-top: 1.5rem; overflow: hidden; max-height: 500px; transition: all 0.4s ease-in-out; opacity: 1; }
-        .work-fields-container.hidden { max-height: 0; padding: 0; margin-top: 0; border: none; opacity: 0; }
-        .btn-primary { background-color: var(--primary-color); color: #fff; border: 1px solid var(--primary-color); padding: 0.6rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; transition: all 0.2s ease; }
-        .btn-primary:hover { background-color: #2563eb; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3); }
-        .btn-secondary { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 0.6rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; transition: all 0.2s ease; }
-        .btn-secondary:hover { background-color: var(--border-color); color: var(--text-dark); }
-        
-        @media (max-width: 991.98px) {
-            .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); }
-            body.sidebar-visible .sidebar { transform: translateX(0); }
-            .main-content {
-                width: 100%;
-                padding: 1.5rem;
-                margin-left: 0; /* <<< FIX FOR MOBILE LAYOUT */
-            }
-            .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
-            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
-            .form-grid { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 768px) { .name-grid { grid-template-columns: 1fr; } }
-    </style>
+  <!-- CSS Dependencies -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --sidebar-bg: #1e293b;
+      --main-bg: #f8fafc;
+      --text-dark: #0f172a;
+      --text-light: #e2e8f0;
+      --text-muted: #64748b;
+      --primary-color: #3b82f6;
+      --border-color: #e2e8f0;
+      --card-bg: white;
+      --shadow-color: rgba(99, 102, 241, 0.1);
+      --sidebar-width: 260px;
+    }
+    body {
+      background-color: var(--main-bg);
+      color: var(--text-dark);
+      font-family: "Poppins", sans-serif;
+      overflow-x: hidden;
+    }
+    .dashboard-container {
+      display: flex;
+    }
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--sidebar-bg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      color: var(--text-light);
+      flex-shrink: 0;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      transition: margin-left 0.3s ease-in-out;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #fff;
+      text-decoration: none;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 2.5rem;
+    }
+    .sidebar-nav .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 0.5rem;
+      color: var(--text-light);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .sidebar-nav .nav-item:not(.active):hover {
+      background-color: rgba(255, 255, 255, 0.07);
+      border-left-color: var(--primary-color);
+    }
+    .sidebar-nav .nav-item.active {
+      background-color: var(--primary-color);
+      color: #fff;
+      font-weight: 500;
+    }
+    .sidebar-nav .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+    .main-content {
+      flex-grow: 1;
+      padding: 2.5rem;
+      transition: margin-left 0.3s ease-in-out;
+      width: calc(100% - var(--sidebar-width));
+    }
+    .main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+    }
+    .header-title .main-title {
+      font-weight: 700;
+      margin: 0;
+      font-size: 1.75rem;
+    }
+    .header-title .main-subtitle {
+      color: var(--text-muted);
+      margin: 0;
+      font-size: 0.9rem;
+    }
+    .sidebar-toggle {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      color: var(--text-dark);
+      font-size: 1.25rem;
+      padding: 0.25rem 0.75rem;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .form-container {
+      background-color: var(--card-bg);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      border: 1px solid transparent;
+      box-shadow: 0 4px 6px var(--shadow-color);
+    }
+    .form-section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 3rem;
+      align-items: flex-start;
+    }
+    .name-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+    .form-group input[type="text"],
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      background-color: #fff;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .form-actions {
+      margin-top: 2rem;
+      text-align: right;
+      border-top: 1px solid var(--border-color);
+      padding-top: 1.5rem;
+    }
+    .avatar-upload-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding-top: 1rem;
+    }
+    .avatar-label {
+      position: relative;
+      cursor: pointer;
+      display: inline-block;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    .current-avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--primary-color);
+      transition: filter 0.2s ease-in-out;
+    }
+    .avatar-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+    .avatar-overlay i {
+      color: #fff;
+      font-size: 2rem;
+    }
+    .avatar-label:hover .current-avatar {
+      filter: brightness(0.7);
+    }
+    .avatar-label:hover .avatar-overlay {
+      opacity: 1;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 1.15em;
+      height: 1.15em;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+    .checkbox-group label {
+      margin: 0;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .work-fields-container {
+      padding-left: 1.5rem;
+      border-left: 2px solid var(--border-color);
+      margin-top: 1.5rem;
+      overflow: hidden;
+      max-height: 500px;
+      transition: all 0.4s ease-in-out;
+      opacity: 1;
+    }
+    .work-fields-container.hidden {
+      max-height: 0;
+      padding: 0;
+      margin-top: 0;
+      border: none;
+      opacity: 0;
+    }
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #fff;
+      border: 1px solid var(--primary-color);
+      padding: 0.6rem 1.5rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      background-color: #2563eb;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    }
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 1.5rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background-color: var(--border-color);
+      color: var(--text-dark);
+    }
+
+    @media (max-width: 991.98px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1050;
+        transform: translateX(-100%);
+      }
+      body.sidebar-visible .sidebar {
+        transform: translateX(0);
+      }
+      .main-content {
+        width: 100%;
+        padding: 1.5rem;
+        margin-left: 0;
+      }
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1040;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease-in-out;
+      }
+      body.sidebar-visible .overlay {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 768px) {
+      .name-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body class="">
-    <div class="dashboard-container">
-        <div class="overlay" id="overlay"></div>
-        <aside class="sidebar" id="sidebar">
-            <a href="{% url 'core:home' %}" class="brand-logo">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g>
-                    <g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g>
-                    <g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                </svg>
-                <span>AluLink</span>
-            </a>
-            <nav class="sidebar-nav mt-3">
-                <a href="{% if profile.user_type == 'student' %}{% url 'core:student_dashboard' %}{% else %}{% url 'core:alumni_dashboard' %}{% endif %}" class="nav-item">
-                    <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
-                </a>
-                <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
-                <a href="{% url 'core:account_settings' %}" class="nav-item"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span>
-            </nav>
-        </aside>
+  <div class="dashboard-container">
+    <div class="overlay" id="overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <a href="{% url 'core:home' %}" class="brand-logo">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g>
+            <path
+              d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5"
+              stroke="white"
+              stroke-width="1.5"
+            />
+          </g>
+          <g>
+            <path
+              d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195"
+              stroke="white"
+              stroke-width="1.5"
+            />
+          </g>
+          <g>
+            <path
+              d="M12.5 12L19 5.5"
+              stroke="#3b82f6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </g>
+        </svg>
+        <span>AluLink</span>
+      </a>
+      <nav class="sidebar-nav mt-3">
+        <a
+          href="{% if profile.user_type == 'student' %}{% url 'core:student_dashboard' %}{% else %}{% url 'core:alumni_dashboard' %}{% endif %}"
+          class="nav-item"
+        >
+          <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
+        </a>
+        {% if profile.is_verified and not profile.fraud_warning %}
+                    <!-- Unlocked Links -->
+                    <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="{% url 'messaging:inbox' %}" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>
+                        {% if unread_message_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'core:connection_requests' %}" class="nav-item"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>
+                        {% if pending_request_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>
+                        {% endif %}
+                    </a>
 
-        <main class="main-content">
-            <header class="main-header">
-                <div class="d-flex align-items-center">
-                    <button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-                    <!-- This is the clean and correct HTML block for the header title -->
-                    <div class="header-title">
-                        <h1 class="main-title">Edit Your Profile</h1>
-                        <p class="main-subtitle">Keep your information up-to-date.</p>
-                    </div>
+                    <!-- === MODIFICATION FOR NOTIFICATIONS BADGE === -->
+                    <a href="{% url 'core:notification_list' %}" class="nav-item"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>
+                        {% if unread_notification_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </a>
+                {% else %}
+                    <!-- Locked Links -->
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
+
+                {% endif %}
+        <a href="{% url 'core:account_settings' %}" class="nav-item"
+          ><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a
+        >
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <div class="d-flex align-items-center">
+          <button
+            class="sidebar-toggle me-3 d-lg-none"
+            id="sidebar-toggle-btn"
+            type="button"
+          >
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="header-title">
+            <h1 class="main-title">Edit Your Profile</h1>
+            <p class="main-subtitle">Keep your information up-to-date.</p>
+          </div>
+        </div>
+        <a href="{% url 'core:profile' %}" class="btn-secondary">Cancel</a>
+      </header>
+
+      <div class="form-container">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="form-grid">
+            <div class="form-section">
+              <h3 class="form-section-title">Personal Info</h3>
+              <div class="name-grid">
+                <div class="form-group">
+                  <label for="{{ u_form.first_name.id_for_label }}"
+                    >First Name</label
+                  >
+                  {{ u_form.first_name }}
                 </div>
-                <a href="{% url 'core:profile' %}" class="btn-secondary">Cancel</a>
-            </header>
-
-            <div class="form-container">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    
-                    <div class="form-grid">
-                        <div class="form-section">
-                            <h3 class="form-section-title">Personal Info</h3>
-                            <div class="name-grid">
-                                <div class="form-group">
-                                    <label for="{{ u_form.first_name.id_for_label }}">First Name</label>
-                                    {{ u_form.first_name }}
-                                </div>
-                                <div class="form-group">
-                                    <label for="{{ u_form.last_name.id_for_label }}">Last Name</label>
-                                    {{ u_form.last_name }}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="{{ p_form.bio.id_for_label }}">Bio</label>
-                                {{ p_form.bio }}
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h3 class="form-section-title">Profile Picture</h3>
-                            <div class="avatar-upload-group">
-                                <label for="{{ p_form.avatar.id_for_label }}" class="avatar-label">
-                                    <img src="{% if p_form.instance.avatar %}{{ p_form.instance.avatar.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}" alt="Avatar Preview" id="avatar-preview" class="current-avatar">
-                                    <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>
-                                </label>
-                                <div style="display: none;">{{ p_form.avatar }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if profile.user_type == 'alumni' %}
-                    <div class="form-section mt-4 pt-4 border-top">
-                        <h3 class="form-section-title">Work Experience</h3>
-                        
-                        <div class="form-group checkbox-group">
-                            {{ p_form.currently_employed }}
-                            <label for="{{ p_form.currently_employed.id_for_label }}">{{ p_form.currently_employed.label }}</label>
-                        </div>
-                        <div id="current-work-fields" class="work-fields-container {% if not p_form.instance.currently_employed %}hidden{% endif %}">
-                            <div class="name-grid">
-                                <div class="form-group">
-                                    <label for="{{ p_form.job_title.id_for_label }}">{{ p_form.job_title.label }}</label>
-                                    {{ p_form.job_title }}
-                                </div>
-                                <div class="form-group">
-                                    <label for="{{ p_form.company_name.id_for_label }}">{{ p_form.company_name.label }}</label>
-                                    {{ p_form.company_name }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group checkbox-group mt-4">
-                            {{ p_form.had_past_job }}
-                            <label for="{{ p_form.had_past_job.id_for_label }}">{{ p_form.had_past_job.label }}</label>
-                        </div>
-                        <div id="past-work-fields" class="work-fields-container {% if not p_form.instance.had_past_job %}hidden{% endif %}">
-                            <div class="name-grid">
-                                <div class="form-group">
-                                    <label for="{{ p_form.past_job_title.id_for_label }}">{{ p_form.past_job_title.label }}</label>
-                                    {{ p_form.past_job_title }}
-                                </div>
-                                <div class="form-group">
-                                    <label for="{{ p_form.past_company_name.id_for_label }}">{{ p_form.past_company_name.label }}</label>
-                                    {{ p_form.past_company_name }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary">Save Changes</button>
-                    </div>
-                </form>
+                <div class="form-group">
+                  <label for="{{ u_form.last_name.id_for_label }}"
+                    >Last Name</label
+                  >
+                  {{ u_form.last_name }}
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="{{ p_form.bio.id_for_label }}">Bio</label>
+                {{ p_form.bio }}
+              </div>
             </div>
-        </main>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const toggleButton = document.getElementById('sidebar-toggle-btn');
-            const overlay = document.getElementById('overlay');
-            const body = document.body;
-            const IS_MOBILE_BREAKPOINT = 992;
+            <div class="form-section">
+              <h3 class="form-section-title">Profile Picture</h3>
+              <div class="avatar-upload-group">
+                <label
+                  for="{{ p_form.avatar.id_for_label }}"
+                  class="avatar-label"
+                >
+                  <img
+                    src="{% if p_form.instance.avatar %}{{ p_form.instance.avatar.url }}{% else %}{% static 'core/images/images.jpg' %}{% endif %}"
+                    alt="Avatar Preview"
+                    id="avatar-preview"
+                    class="current-avatar"
+                  />
+                  <div class="avatar-overlay">
+                    <i class="fa-solid fa-camera"></i>
+                  </div>
+                </label>
+                <div style="display: none">{{ p_form.avatar }}</div>
+              </div>
+            </div>
+          </div>
 
-            function toggleSidebar() {
-                if (window.innerWidth < IS_MOBILE_BREAKPOINT) {
-                    body.classList.toggle('sidebar-visible');
-                }
-            }
-            if (toggleButton) toggleButton.addEventListener('click', toggleSidebar);
-            if (overlay) overlay.addEventListener('click', toggleSidebar);
+          {% if profile.user_type == 'alumni' %}
+          <div class="form-section mt-4 pt-4 border-top">
+            <h3 class="form-section-title">Work Experience</h3>
 
-            const avatarInput = document.getElementById('{{ p_form.avatar.id_for_label }}');
-            const avatarPreview = document.getElementById('avatar-preview');
-            if (avatarInput) {
-                avatarInput.addEventListener('change', function(event) {
-                    if (event.target.files && event.target.files[0]) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => avatarPreview.src = e.target.result;
-                        reader.readAsDataURL(event.target.files[0]);
-                    }
-                });
-            }
+            <div class="form-group checkbox-group">
+              {{ p_form.currently_employed }}
+              <label for="{{ p_form.currently_employed.id_for_label }}"
+                >{{ p_form.currently_employed.label }}</label
+              >
+            </div>
+            <div
+              id="current-work-fields"
+              class="work-fields-container {% if not p_form.instance.currently_employed %}hidden{% endif %}"
+            >
+              <div class="name-grid">
+                <div class="form-group">
+                  <label for="{{ p_form.job_title.id_for_label }}"
+                    >{{ p_form.job_title.label }}</label
+                  >
+                  {{ p_form.job_title }}
+                </div>
+                <div class="form-group">
+                  <label for="{{ p_form.company_name.id_for_label }}"
+                    >{{ p_form.company_name.label }}</label
+                  >
+                  {{ p_form.company_name }}
+                </div>
+              </div>
+            </div>
 
-            const currentlyEmployedCheckbox = document.getElementById('{{ p_form.currently_employed.id_for_label }}');
-            const currentWorkFields = document.getElementById('current-work-fields');
-            const hadPastJobCheckbox = document.getElementById('{{ p_form.had_past_job.id_for_label }}');
-            const pastWorkFields = document.getElementById('past-work-fields');
+            <div class="form-group checkbox-group mt-4">
+              {{ p_form.had_past_job }}
+              <label for="{{ p_form.had_past_job.id_for_label }}"
+                >{{ p_form.had_past_job.label }}</label
+              >
+            </div>
+            <div
+              id="past-work-fields"
+              class="work-fields-container {% if not p_form.instance.had_past_job %}hidden{% endif %}"
+            >
+              <div class="name-grid">
+                <div class="form-group">
+                  <label for="{{ p_form.past_job_title.id_for_label }}"
+                    >{{ p_form.past_job_title.label }}</label
+                  >
+                  {{ p_form.past_job_title }}
+                </div>
+                <div class="form-group">
+                  <label for="{{ p_form.past_company_name.id_for_label }}"
+                    >{{ p_form.past_company_name.label }}</label
+                  >
+                  {{ p_form.past_company_name }}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
 
-            if (currentlyEmployedCheckbox) {
-                currentlyEmployedCheckbox.addEventListener('change', function() {
-                    currentWorkFields.classList.toggle('hidden', !this.checked);
-                });
-            }
-            if (hadPastJobCheckbox) {
-                hadPastJobCheckbox.addEventListener('change', function() {
-                    pastWorkFields.classList.toggle('hidden', !this.checked);
-                });
-            }
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const toggleButton = document.getElementById("sidebar-toggle-btn");
+      const overlay = document.getElementById("overlay");
+      const body = document.body;
+      const IS_MOBILE_BREAKPOINT = 992;
+
+      function toggleSidebar() {
+        if (window.innerWidth < IS_MOBILE_BREAKPOINT) {
+          body.classList.toggle("sidebar-visible");
+        }
+      }
+      if (toggleButton) toggleButton.addEventListener("click", toggleSidebar);
+      if (overlay) overlay.addEventListener("click", toggleSidebar);
+
+      const avatarInput = document.getElementById(
+        "{{ p_form.avatar.id_for_label }}"
+      );
+      const avatarPreview = document.getElementById("avatar-preview");
+      if (avatarInput) {
+        avatarInput.addEventListener("change", function (event) {
+          if (event.target.files && event.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => (avatarPreview.src = e.target.result);
+            reader.readAsDataURL(event.target.files[0]);
+          }
         });
-    </script>
+      }
+
+      const currentlyEmployedCheckbox = document.getElementById(
+        "{{ p_form.currently_employed.id_for_label }}"
+      );
+      const currentWorkFields = document.getElementById("current-work-fields");
+      const hadPastJobCheckbox = document.getElementById(
+        "{{ p_form.had_past_job.id_for_label }}"
+      );
+      const pastWorkFields = document.getElementById("past-work-fields");
+
+      if (currentlyEmployedCheckbox) {
+        currentlyEmployedCheckbox.addEventListener("change", function () {
+          currentWorkFields.classList.toggle("hidden", !this.checked);
+        });
+      }
+      if (hadPastJobCheckbox) {
+        hadPastJobCheckbox.addEventListener("change", function () {
+          pastWorkFields.classList.toggle("hidden", !this.checked);
+        });
+      }
+    });
+  </script>
 </body>
 {% endblock %}

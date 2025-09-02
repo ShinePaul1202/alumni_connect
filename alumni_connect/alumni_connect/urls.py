@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),  # <-- This correctly points the root to your core app
     path('accounts/', include('allauth.urls')),
+    path("messages/", include(("messaging.urls", "messaging"), namespace="messaging")),
 ]
 
 if settings.DEBUG:

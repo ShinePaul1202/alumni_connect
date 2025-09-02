@@ -25,6 +25,12 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
 
     path("find-alumni/", views.find_alumni, name="find_alumni"),
+
+    path('connect/send/<int:user_id>/', views.send_connection_request, name='send_connection_request'),
+    path('connect/requests/', views.connection_requests_list, name='connection_requests'),
+    path('connect/respond/<int:request_id>/<str:action>/', views.respond_to_connection_request, name='respond_to_connection_request'),
+    
+    path('notifications/', views.notification_list_view, name='notification_list'),
     
     # NEW "Settings Home" URL: This is the new entry point for the settings menu.
     path('account/settings/', views.settings_home_view, name='account_settings'),

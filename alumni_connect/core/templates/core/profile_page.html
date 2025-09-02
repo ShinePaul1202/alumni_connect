@@ -66,8 +66,34 @@
             </a>
             <nav class="sidebar-nav mt-3">
                 <a href="{% if request.user.profile.user_type == 'student' %}{% url 'core:student_dashboard' %}{% else %}{% url 'core:alumni_dashboard' %}{% endif %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
-                <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                <a href="" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                {% if profile.is_verified and not profile.fraud_warning %}
+                    <!-- Unlocked Links -->
+                    <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="{% url 'messaging:inbox' %}" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>
+                        {% if unread_message_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'core:connection_requests' %}" class="nav-item"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>
+                        {% if pending_request_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>
+                        {% endif %}
+                    </a>
+
+                    <!-- === MODIFICATION FOR NOTIFICATIONS BADGE === -->
+                    <a href="{% url 'core:notification_list' %}" class="nav-item"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>
+                        {% if unread_notification_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </a>
+                {% else %}
+                    <!-- Locked Links -->
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
+
+                {% endif %}
                 <a href="{% url 'core:account_settings' %}" class="nav-item"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span>
                 </a>
             </nav>
@@ -98,10 +124,38 @@
                     </div>
                 </div>
                 <!-- Only show the "Edit Profile" button if you are viewing your OWN profile -->
+                <!-- === COPY AND PASTE THIS FINAL, CORRECTED BLOCK === -->
                 {% if viewed_profile.user == request.user %}
+                    <!-- If viewing your own profile, show "Edit Profile" -->
                     <a href="{% url 'core:profile_update' %}" class="btn-primary"><i class="fa-solid fa-pencil me-2"></i>Edit Profile</a>
+
                 {% else %}
-                    <a href="#" class="btn-primary"><i class="fa-solid fa-paper-plane me-2"></i>Send Message</a>
+                    <!-- Viewing someone else's profile -->
+                    {% if connection and connection.status == 'accepted' %}
+                        <!-- 1. They are connected, so show the Message button -->
+                        <a href="{% url 'messaging:chat_with_user' user_id=viewed_profile.user.id %}" class="btn-primary"><i class="fa-solid fa-paper-plane me-2"></i>Message</a>
+
+                    {% elif connection and connection.status == 'pending' %}
+                        {% if connection.sender == request.user %}
+                            <!-- 2. You sent a request, show a disabled "Pending" button -->
+                            <button class="btn btn-secondary" disabled>Request Sent</button>
+                        {% else %}
+                            <!-- 3. You received a request, show Accept/Decline buttons -->
+                            <a href="{% url 'core:respond_to_connection_request' request_id=connection.id action='accept' %}" class="btn btn-success me-2">Accept Request</a>
+                            <a href="{% url 'core:respond_to_connection_request' request_id=connection.id action='decline' %}" class="btn btn-outline-danger">Decline</a>
+                        {% endif %}
+
+                    {% else %}
+                        <!-- 4. No connection exists, show the "Send Request" button based on rules -->
+
+                        <!-- ========================================================= -->
+                        <!-- == FIX: This is the corrected 'if' statement (NO PARENTHESES) == -->
+                        <!-- ========================================================= -->
+                        {% if request.user.profile.user_type == 'student' and viewed_profile.user_type == 'alumni' or request.user.profile.user_type == 'alumni' and viewed_profile.user_type == 'alumni' %}
+                            <a href="{% url 'core:send_connection_request' user_id=viewed_profile.user.id %}" class="btn btn-outline-primary"><i class="fa-solid fa-user-plus me-2"></i>Connect</a>
+                        {% endif %}
+
+                    {% endif %}
                 {% endif %}
             </header>
             <div class="profile-grid">

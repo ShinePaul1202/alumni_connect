@@ -1,0 +1,31 @@
+<!-- C:\project\alumni_connect\core\templates\core\notifications.html -->
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Notifications | AluLink{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Your Notifications</h1>
+
+    <div class="list-group">
+        {% for notification in notifications %}
+            <a href="{{ notification.link|default:'#' }}" class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-info{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                    <p class="mb-1">
+                        {% if notification.actor %}
+                            <strong>{{ notification.actor.username }}</strong>
+                        {% endif %}
+                        {{ notification.verb }}
+                    </p>
+                    <small>{{ notification.created_at|timesince }} ago</small>
+                </div>
+            </a>
+        {% empty %}
+            <div class="list-group-item text-center text-muted">
+                You have no notifications yet.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

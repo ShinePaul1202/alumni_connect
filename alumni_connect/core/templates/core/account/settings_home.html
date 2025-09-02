@@ -23,14 +23,22 @@
             --sidebar-width: 260px;
         }
 
+        /*
+         * --- THIS IS THE FIX ---
+         * We are overriding the external style.css by forcing the body
+         * to have no maximum width. This allows it to fill the screen.
+        */
         body {
+            max-width: none !important; /* Remove width limit from external CSS */
             background-color: var(--main-bg);
             color: var(--text-dark);
             font-family: 'Poppins', sans-serif;
-            overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+            overflow-x: hidden;
         }
 
-        .dashboard-container { display: flex; }
+        .dashboard-container { 
+            display: flex;
+        }
 
         .sidebar {
             width: var(--sidebar-width);
@@ -47,8 +55,7 @@
         .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
         .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); border-left-color: var(--primary-color); }
         .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
-        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; background-color: transparent; }
-        .sidebar-nav .nav-item.disabled:hover { background-color: transparent; border-left-color: transparent; }
+        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; }
         .sidebar-nav .nav-item i { width: 20px; text-align: center; }
 
         .main-content {
@@ -57,12 +64,52 @@
             width: calc(100% - var(--sidebar-width));
         }
 
-        /* Styles for the settings card in the main content area */
-        .list-group-item-action { font-weight: 500; font-size: 1.05rem; }
-        .list-group-item-action .icon { color: var(--text-muted); width: 24px; margin-right: 1.5rem; text-align: center; font-size: 1.1rem; }
-        .list-group-item-action .chevron { margin-left: auto; color: var(--text-muted); font-size: 0.9em; }
+        /* Fix for the empty space - extend the card width */
+        .main-content .card {
+            width: 100%;
+        }
 
-        /* Responsive Sidebar Styles */
+        /* Force list items to extend full width */
+        .list-group {
+            width: 100% !important;
+        }
+
+        .list-group-item {
+            width: 100% !important;
+            max-width: none !important;
+        }
+
+        .list-group-item-action { 
+            font-weight: 500; 
+            font-size: 1.05rem;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 1rem 1.5rem !important;
+        }
+        
+        .list-group-item-action .content-wrapper {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+        
+        .list-group-item-action .icon { 
+            color: var(--text-muted); 
+            width: 24px; 
+            margin-right: 1.5rem; 
+            text-align: center; 
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        
+        .list-group-item-action .chevron { 
+            color: var(--text-muted); 
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
         .sidebar-toggle { display: none; background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-dark); font-size: 1.25rem; padding: 0.25rem 0.75rem; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
         
@@ -75,18 +122,13 @@
                 z-index: 1050;
                 transform: translateX(-100%);
             }
-            body.sidebar-visible .sidebar {
-                transform: translateX(0);
-            }
+            body.sidebar-visible .sidebar { transform: translateX(0); }
             .main-content {
                 width: 100%;
                 margin-left: 0;
                 padding: 1.5rem;
             }
-            body.sidebar-visible .overlay {
-                opacity: 1;
-                pointer-events: auto;
-            }
+            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
         }
     </style>
 </head>
@@ -94,7 +136,6 @@
     <div class="dashboard-container">
         <div class="overlay" id="overlay"></div>
 
-        <!-- Main Sidebar -->
         <aside class="sidebar" id="sidebar">
             <a href="{% url 'core:home' %}" class="brand-logo">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg><span>AluLink</span></a>
@@ -106,16 +147,40 @@
                     <a href="{% url 'core:student_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
                 {% endif %}
                 
-                <a href="{% url 'core:find_alumni' %}" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                <a href="#" class="nav-item {% if not profile.is_verified %}disabled{% endif %}"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                {% if profile.is_verified and not profile.fraud_warning %}
+                    <!-- Unlocked Links -->
+                    <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="{% url 'messaging:inbox' %}" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>
+                        {% if unread_message_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'core:connection_requests' %}" class="nav-item"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>
+                        {% if pending_request_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>
+                        {% endif %}
+                    </a>
+
+                    <!-- === MODIFICATION FOR NOTIFICATIONS BADGE === -->
+                    <a href="{% url 'core:notification_list' %}" class="nav-item"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>
+                        {% if unread_notification_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </a>
+                {% else %}
+                    <!-- Locked Links -->
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
+
+                {% endif %}
                 <a href="{% url 'core:account_settings' %}" class="nav-item active"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="main-content">
             <header class="d-flex align-items-center mb-4">
-                <!-- Hamburger button, only visible on mobile -->
                 <button class="sidebar-toggle me-3" id="sidebar-toggle-btn" type="button">
                     <i class="fa-solid fa-bars"></i>
                 </button>
@@ -128,18 +193,24 @@
             <div class="card shadow-sm border-0 rounded-4 mt-4">
                 <div class="list-group list-group-flush">
                     <a href="{% url 'core:account_details' %}" class="list-group-item list-group-item-action d-flex align-items-center p-3">
-                        <i class="icon fa-solid fa-user-gear fa-fw"></i>
-                        <span>Account Details</span>
+                        <div class="content-wrapper">
+                            <i class="icon fa-solid fa-user-gear fa-fw"></i>
+                            <span>Account Details</span>
+                        </div>
                         <i class="chevron fa-solid fa-chevron-right"></i>
                     </a>
                     <a href="{% url 'core:password_security' %}" class="list-group-item list-group-item-action d-flex align-items-center p-3">
-                        <i class="icon fa-solid fa-shield-halved fa-fw"></i>
-                        <span>Password & Security</span>
+                        <div class="content-wrapper">
+                            <i class="icon fa-solid fa-shield-halved fa-fw"></i>
+                            <span>Password & Security</span>
+                        </div>
                         <i class="chevron fa-solid fa-chevron-right"></i>
                     </a>
                     <a href="{% url 'core:notification_settings' %}" class="list-group-item list-group-item-action d-flex align-items-center p-3">
-                        <i class="icon fa-solid fa-bell fa-fw"></i>
-                        <span>Notifications</span>
+                        <div class="content-wrapper">
+                            <i class="icon fa-solid fa-bell fa-fw"></i>
+                            <span>Notifications</span>
+                        </div>
                         <i class="chevron fa-solid fa-chevron-right"></i>
                     </a>
                 </div>
@@ -154,15 +225,11 @@
             const body = document.body;
 
             if (toggleButton) {
-                toggleButton.addEventListener('click', () => {
-                    body.classList.toggle('sidebar-visible');
-                });
+                toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); });
             }
 
             if (overlay) {
-                overlay.addEventListener('click', () => {
-                    body.classList.remove('sidebar-visible');
-                });
+                overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); });
             }
         });
     </script>
