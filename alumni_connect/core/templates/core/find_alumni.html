@@ -164,7 +164,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             const toggleButton = document.getElementById('sidebar-toggle-btn');
             const overlay = document.getElementById('overlay');
-            const body = document..body;
+            const body = document.body;
 
             if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
             if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }

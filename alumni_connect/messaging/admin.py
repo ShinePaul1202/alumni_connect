@@ -14,3 +14,4 @@ class ConversationParticipantAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     list_display = ("id", "conversation", "sender", "created_at")
     ordering = ("-created_at",)
+

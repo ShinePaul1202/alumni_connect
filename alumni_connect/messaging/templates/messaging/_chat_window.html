@@ -1,0 +1,83 @@
+<!-- messaging/templates/messaging/_chat_window.html -->
+
+<div class="card chat-container-card">
+    <div class="card-header chat-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm btn-outline-secondary me-2 d-lg-none" id="back-to-chats-btn">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <img src="{{ other_user.profile.avatar.url|default:'/static/core/img/avatar-placeholder.png' }}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;">
+            <div>
+                <h6 class="mb-0 fw-bold">{{ other_user.get_full_name|default:other_user.username }}</h6>
+                <small class="text-muted">{{ other_user.profile.department|default:"" }}</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Selection Mode Action Bar (hidden by default) -->
+    <div id="selection-action-bar" class="d-none align-items-center justify-content-between p-3 border-bottom">
+        <div>
+            <button id="cancel-selection-btn" class="btn btn-sm btn-secondary">Cancel</button>
+        </div>
+        <div id="selection-count" class="fw-bold">0 Selected</div>
+        <div>
+            <button id="delete-selected-btn" class="btn btn-sm btn-danger" disabled>
+                <i class="fa-solid fa-trash-can me-1"></i> Delete
+            </button>
+        </div>
+    </div>
+    
+    <div class="card-body chat-body" id="chat" data-poll-url="{% url 'messaging:fetch_messages' pk=conversation.pk %}">
+        {% for m in messages %}
+        <div class="d-flex flex-column mb-3 msg-wrapper {% if m.sender_id == request.user.id %}align-items-end{% else %}align-items-start{% endif %}" data-msg-id="{{ m.id }}">
+            <div class="msg-bubble {% if m.sender_id == request.user.id %}msg-sent{% else %}msg-received{% endif %}">
+                {% if m.file %}
+                    {% with m.file.url as file_url %}
+                        {% if 'jpg' in file_url|lower or 'jpeg' in file_url|lower or 'png' in file_url|lower or 'gif' in file_url|lower or 'webp' in file_url|lower %}
+                            <img src="{{ m.file.url }}" class="img-fluid rounded my-2" style="max-height: 200px; cursor: pointer;" onclick="window.open('{{ m.file.url }}', '_blank');">
+                        {% else %}
+                            <a href="{{ m.file.url }}" target="_blank" class="d-flex align-items-center text-decoration-none text-inherit my-2 p-2 rounded" style="background-color: rgba(0,0,0,0.1);">
+                                <i class="fa-solid fa-file-arrow-down me-2"></i>
+                                <span>{{ m.file.name|slice:"14:" }}</span>
+                            </a>
+                        {% endif %}
+                    {% endwith %}
+                {% endif %}
+                {{ m.text|linebreaksbr }}
+            </div>
+            <div class="d-flex align-items-center mt-1">
+                {% if m.sender_id == request.user.id %}
+                    <!-- The single delete button is now only for hover, not selection mode -->
+                    <button class="btn btn-sm text-danger delete-msg-btn p-0 me-2" 
+                            data-delete-url="{% url 'messaging:delete_message' pk=m.id %}"
+                            aria-label="Delete message">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                {% endif %}
+                <small class="msg-time">{{ m.created_at|time:"H:i" }}</small>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card-footer chat-footer p-3">
+        <div id="file-preview-container" class="d-none align-items-center bg-light p-2 rounded mb-2">
+            <i class="fa-solid fa-file me-2 text-muted"></i>
+            <span id="file-preview-name" class="text-muted small flex-grow-1 text-truncate"></span>
+            <button type="button" id="file-preview-clear" class="btn-close ms-2" aria-label="Remove file"></button>
+        </div>
+
+        <form id="send-form" class="d-flex align-items-center gap-2" data-send-url="{% url 'messaging:send_message' pk=conversation.pk %}">
+            {% csrf_token %}
+            <label for="file-input-{{ conversation.pk }}" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer; flex-shrink: 0;">
+                <i class="fa-solid fa-paperclip"></i>
+            </label>
+            <input type="file" id="file-input-{{ conversation.pk }}" name="file" class="d-none" multiple>
+
+            <input id="msg-input" name="text" class="form-control" placeholder="Type a message..." autocomplete="off">
+            <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; flex-shrink: 0;" type="submit" aria-label="Send">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+</div>

@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -5,9 +6,10 @@ from django.db.models import Count, Q
 from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib import messages as flash_messages
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .models import Conversation, ConversationParticipant, Message
-from core.models import Connection
+from core.models import Connection, Profile
 
 User = get_user_model()
 
@@ -24,23 +26,24 @@ def user_is_verified(user):
 
 def _get_or_create_1to1_conversation(user1, user2):
     """
-    Find a non-group conversation that has exactly these two participants.
-    If none, create it and add both participants.
+    Finds or creates a 1-on-1 conversation using a unique, sorted key.
+    This is atomic and prevents race conditions.
     """
-    conversation = (
-        Conversation.objects
-        .filter(is_group=False, participants=user1)
-        .filter(participants=user2)
-        .annotate(pcount=Count("participants"))
-        .filter(pcount=2)
-        .first()
-    )
-    if conversation:
-        return conversation
+    # Ensure IDs are always in the same order (lower first)
+    low_id, high_id = min(user1.id, user2.id), max(user1.id, user2.id)
+    key = f"{low_id}-{high_id}"
 
-    conversation = Conversation.objects.create(is_group=False)
-    ConversationParticipant.objects.create(conversation=conversation, user=user1)
-    ConversationParticipant.objects.create(conversation=conversation, user=user2)
+    # Use get_or_create for an atomic database operation
+    conversation, created = Conversation.objects.get_or_create(
+        unique_key=key,
+        defaults={'is_group': False}
+    )
+
+    # If a new conversation was created, we must add the participants
+    if created:
+        ConversationParticipant.objects.create(conversation=conversation, user=user1)
+        ConversationParticipant.objects.create(conversation=conversation, user=user2)
+
     return conversation
 
 
@@ -58,7 +61,12 @@ def inbox(request):
         other = c.participants.exclude(pk=request.user.pk).first()
         last = c.last_message()
         conv_list.append({"conversation": c, "other": other, "last": last})
-    return render(request, "messaging/inbox.html", {"conversations": conv_list})
+    profile = get_object_or_404(Profile, user=request.user)
+    context = {
+        "conversations": conv_list,
+        "profile": profile, # <-- Add the profile here
+    }
+    return render(request, "messaging/inbox.html", context)
 
 
 @login_required
@@ -108,36 +116,61 @@ def conversation_view(request, pk):
 
     messages_qs = convo.messages.select_related("sender").all()  # ordered by created_at by model Meta
     other = convo.participants.exclude(pk=request.user.pk).first()
-    return render(
-        request,
-        "messaging/conversation.html",
-        {"conversation": convo, "messages": messages_qs, "other_user": other},
-    )
+    
+    profile = get_object_or_404(Profile, user=request.user)
+    context = {
+        "conversation": convo,
+        "messages": messages_qs,
+        "other_user": other,
+        "profile": profile, # <-- Add the profile here
+    }
+    return render(request, "messaging/conversation.html", context)
 
 
+@require_POST
 @login_required
 def send_message_ajax(request, pk):
-    """AJAX endpoint: create a new message in conversation pk (POST)."""
-    if request.method != "POST":
-        return HttpResponseForbidden()
-
+    """AJAX endpoint: create new messages (text and/or multiple files)."""
     convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
     text = (request.POST.get("text") or "").strip()
-    if not text:
+    
+    # THE FIX: Use getlist() to handle multiple files
+    files = request.FILES.getlist('file')
+
+    if not text and not files:
         return JsonResponse({"ok": False, "error": "empty"})
 
-    msg = Message.objects.create(conversation=convo, sender=request.user, text=text)
+    created_messages = []
+
+    # Create a message for the text part if it exists
+    if text:
+        msg = Message.objects.create(conversation=convo, sender=request.user, text=text)
+        created_messages.append(msg)
+
+    # Create a separate message for each uploaded file
+    for f in files:
+        msg = Message.objects.create(conversation=convo, sender=request.user, file=f)
+        created_messages.append(msg)
+    
     convo.save()  # update updated_at
-    return JsonResponse(
-        {
-            "ok": True,
-            "id": msg.id,
-            "text": msg.text,
-            "sender_id": msg.sender_id,
-            "sender_username": msg.sender.username,
-            "created": msg.created_at.strftime("%H:%M"),
-        }
-    )
+
+    # THE FIX: Return a list of all created messages
+    response_data = {
+        "ok": True,
+        "messages": [
+            {
+                "id": m.id,
+                "text": m.text,
+                "sender_id": m.sender_id,
+                "sender_username": m.sender.username,
+                "created": m.created_at.strftime("%H:%M"),
+                "file_url": m.file.url if m.file else None,
+                "file_name": str(m.file).split('/')[-1] if m.file else None,
+            }
+            for m in created_messages
+        ]
+    }
+    return JsonResponse(response_data)
 
 
 @login_required
@@ -160,3 +193,76 @@ def fetch_messages(request, pk):
         for m in new
     ]
     return JsonResponse({"ok": True, "messages": data})
+
+@login_required
+def fetch_conversation_html(request, pk):
+    """
+    AJAX endpoint: Fetches the rendered HTML for a conversation window.
+    """
+    convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
+    
+    # This logic is the same as your original conversation_view
+    participant = ConversationParticipant.objects.get(conversation=convo, user=request.user)
+    participant.last_read_at = timezone.now()
+    participant.save(update_fields=['last_read_at'])
+
+    messages_qs = convo.messages.select_related("sender").all()
+    other = convo.participants.exclude(pk=request.user.pk).first()
+    
+    context = {
+        "conversation": convo,
+        "messages": messages_qs,
+        "other_user": other,
+    }
+    # The only difference is we render the PARTIAL template
+    return render(request, "messaging/_chat_window.html", context)
+
+@require_POST
+@login_required
+def delete_message_ajax(request, pk):
+    """AJAX endpoint: delete a message by its pk."""
+    try:
+        # Find the message
+        message = get_object_or_404(Message, pk=pk)
+        
+        # SECURITY CHECK: Ensure the user deleting the message is the original sender.
+        if request.user != message.sender:
+            return JsonResponse({"ok": False, "error": "Forbidden"}, status=403)
+            
+        # If the check passes, delete the message
+        message.delete()
+        
+        return JsonResponse({"ok": True})
+
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)
+    
+@require_POST
+@login_required
+def delete_messages_bulk_ajax(request):
+    """AJAX endpoint: delete a list of messages by their PKs."""
+    try:
+        # Get the list of message IDs from the POST request body
+        data = json.loads(request.body)
+        message_ids = data.get('ids', [])
+
+        if not message_ids:
+            return JsonResponse({"ok": False, "error": "No message IDs provided."}, status=400)
+
+        # SECURITY: This is the most important part.
+        # This query ensures that a user can ONLY delete messages that
+        # they are the sender of. It's impossible to delete someone else's messages.
+        messages_to_delete = Message.objects.filter(
+            pk__in=message_ids,
+            sender=request.user
+        )
+        
+        # Get the count before deleting for the response
+        count, _ = messages_to_delete.delete()
+
+        return JsonResponse({"ok": True, "deleted_count": count})
+
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "error": "Invalid JSON."}, status=400)
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)

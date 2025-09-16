@@ -1,41 +1,187 @@
-<!-- core/templates/core/connection_requests.html -->
-
 {% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}Connection Requests | AluLink{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <h1 class="mb-4">Connection Requests</h1>
+<head>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- This CSS is copied directly from your student_dashboard.html for consistency -->
+    <style>
+        :root {
+            --sidebar-bg: #1e293b; --main-bg: #f8fafc; --text-dark: #0f172a; --text-light: #e2e8f0; --text-muted: #64748b; --primary-color: #3b82f6; --border-color: #e2e8f0; --card-bg: white; --shadow-color: rgba(99, 102, 241, 0.1); --sidebar-width: 260px;
+        }
+        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; overflow-x: hidden; }
+        .dashboard-container { display: flex; }
+        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; display: flex; flex-direction: column; color: var(--text-light); flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease-in-out; }
+        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
+        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
+        .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); border-left-color: var(--primary-color); }
+        .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
+        .sidebar-nav .nav-item i { width: 20px; text-align: center; }
+        .main-content { flex-grow: 1; padding: 2.5rem; transition: margin-left 0.3s ease-in-out; width: calc(100% - var(--sidebar-width)); }
+        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; }
+        .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; }
+        .header-title .main-subtitle { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+        .profile-dropdown { position: relative; }
+        .profile-dropdown-btn img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; cursor: pointer; transition: box-shadow 0.2s ease; }
+        .profile-dropdown-btn:hover img { box-shadow: 0 0 0 3px var(--primary-color); }
+        .profile-dropdown-menu { position: absolute; top: 100%; right: 0; min-width: 200px; background: white; border-radius: 0.75rem; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px var(--shadow-color); padding: 0.5rem 0; z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease; }
+        .profile-dropdown:hover .profile-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .profile-dropdown-menu a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: var(--text-dark); text-decoration: none; font-size: 0.95rem; }
+        .profile-dropdown-menu a:hover { background-color: #f1f5f9; }
+        .dashboard-section { margin-top: 2rem; }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; }
+        .card { background-color: var(--card-bg); border: none; border-radius: 1rem; box-shadow: 0 4px 6px var(--shadow-color); height: 100%; }
+        .alumni-card-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+        .btn-outline-primary { transition: all 0.2s ease; }
+        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; cursor: not-allowed; background-color: transparent; }
+        .sidebar-nav .nav-item.disabled:hover { background-color: transparent; border-left-color: transparent; }
+        @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1.5rem; } .header-title { display: none; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } }
+    </style>
+</head>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+<body>
+    <div class="dashboard-container">
+        <div class="overlay" id="overlay"></div>
+        <aside class="sidebar" id="sidebar">
+            <a href="{% url 'core:home' %}" class="brand-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg><span>AluLink</span></a>
+            <nav class="sidebar-nav mt-3">
+                <!-- Dashboard Link -->
+                {% if profile.user_type == 'student' %}
+                    <a href="{% url 'core:student_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'core:alumni_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'alumni_dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span>
+                    </a>
+                {% endif %}
 
-    {% if requests %}
-        <div class="list-group">
-            {% for req in requests %}
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <img src="{{ req.sender.profile.avatar.url }}" alt="" style="width:50px; height:50px; border-radius:50%; object-fit:cover;" class="me-3">
-                        <strong>{{ req.sender.profile.full_name|default:req.sender.username }}</strong> wants to connect.
-                    </div>
-                    <div>
-                        <a href="{% url 'core:respond_to_connection_request' request_id=req.id action='accept' %}" class="btn btn-success me-2">Accept</a>
-                        <a href="{% url 'core:respond_to_connection_request' request_id=req.id action='decline' %}" class="btn btn-danger">Decline</a>
+                <!-- Main Navigation (Locked/Unlocked) -->
+                {% if profile.is_verified and not profile.fraud_warning %}
+                    <a href="{% url 'core:find_alumni' %}" class="nav-item {% if request.resolver_match.url_name == 'find_alumni' %}active{% endif %}"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="{% url 'messaging:inbox' %}" class="nav-item {% if 'messaging' in request.resolver_match.app_name %}active{% endif %}"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>
+                        {% if unread_message_count > 0 %}<span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>{% endif %}
+                    </a>
+                    
+                    <!-- MODIFIED: "Requests" link is now aware of the current page -->
+                    <a href="{% url 'core:connection_requests' %}" class="nav-item {% if request.resolver_match.url_name == 'connection_requests' %}active{% endif %}"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>
+                        {% if pending_request_count > 0 %}<span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>{% endif %}
+                    </a>
+
+                    <a href="{% url 'core:notification_list' %}" class="nav-item {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>
+                        {% if unread_notification_count > 0 %}<span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>{% endif %}
+                    </a>
+                {% else %}
+                    <!-- Locked Links -->
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
+                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
+                {% endif %}
+                
+                <!-- Settings Link -->
+                <a href="{% url 'core:account_settings' %}" class="nav-item {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fa-solid fa-gear fa-fw"></i><span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <!-- Header content -->
+                <div class="d-flex align-items-center">
+                    <button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button"><i class="fa-solid fa-bars"></i></button>
+                    <div class="header-title">
+                        <h1 class="main-title">Connection Requests</h1>
+                        <p class="main-subtitle d-none d-lg-block">Manage your pending connection requests.</p>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="card text-center py-5">
-            <div class="card-body">
-                <p class="text-muted">You have no pending connection requests.</p>
-            </div>
-        </div>
-    {% endif %}
-</div>
+                <div class="profile-dropdown">
+                    <div class="profile-dropdown-btn">
+                        <img src="{{ profile.avatar.url }}" alt="Profile">
+                    </div>
+                    <div class="profile-dropdown-menu">
+                        <a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a>
+                        <a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i>Settings</a>
+                        <hr class="my-1">
+                        <a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Status Messages (e.g., success/error after responding to a request) -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Main content for the Requests page -->
+            <section class="dashboard-section">
+                {% if requests %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for req in requests %}
+                            <!-- A single request card, styled like the dashboard's alumni list card -->
+                            <div class="card p-3">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
+                                    <!-- User Info -->
+                                    <div class="d-flex align-items-center mb-3 mb-sm-0">
+                                        <img class="alumni-card-img me-3" src="{{ req.sender.profile.avatar.url|default:'/static/core/img/avatar-placeholder.png' }}" alt="{{ req.sender.profile.full_name }}">
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-0 fw-semibold">{{ req.sender.profile.full_name|default:req.sender.username }}</h5>
+                                            <p class="mb-0 text-muted small">{{ req.sender.profile.department|default:'No department' }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'core:respond_to_connection_request' request_id=req.id action='accept' %}" class="btn btn-primary btn-sm">Confirm</a>
+                                        <a href="{% url 'core:respond_to_connection_request' request_id=req.id action='decline' %}" class="btn btn-outline-secondary btn-sm">Decline</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Empty state placeholder, styled to match the dashboard -->
+                    <div class="card text-center py-5">
+                        <div class="card-body">
+                            <i class="fa-solid fa-user-check mb-3" style="font-size: 3rem; color: #cbd5e1;"></i>
+                            <h5 class="card-title fw-bold">All Caught Up!</h5>
+                            <p class="mb-0 text-muted fw-500">You have no pending connection requests.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+
+    <!-- Responsive Sidebar Script (from dashboard) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleButton = document.getElementById('sidebar-toggle-btn');
+            const overlay = document.getElementById('overlay');
+            const body = document.body;
+            if (toggleButton) {
+                toggleButton.addEventListener('click', () => {
+                    body.classList.toggle('sidebar-visible');
+                });
+            }
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    body.classList.remove('sidebar-visible');
+                });
+            }
+        });
+    </script>
+</body>
 {% endblock %}

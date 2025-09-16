@@ -162,9 +162,33 @@
             {% endif %}
 
             <section class="dashboard-section">
-                <!-- The rest of your template is completely unchanged -->
                 <h2 class="section-title">Overview</h2>
-                <div class="row g-4"><div class="col-md-6"><div class="card stat-card p-4"><div class="d-flex align-items-center gap-4"><div class="card-icon alumni-icon"><i class="fa-solid fa-handshake"></i></div><div><h3>0</h3><p class="mb-0 text-muted">Your Connections</p></div></div></div></div><div class="col-md-6"><div class="card stat-card p-4"><div class="d-flex align-items-center gap-4"><div class="card-icon messages-icon"><i class="fa-solid fa-paper-plane"></i></div><div><h3>{{ student_message_count }}</h3><p class="mb-0 text-muted">Student Messages</p></div></div></div></div></div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card stat-card p-4">
+                            <div class="d-flex align-items-center gap-4">
+                                <div class="card-icon alumni-icon"><i class="fa-solid fa-handshake"></i></div>
+                                <div>
+                                    <!-- THE FIX: Use the new connection_count variable -->
+                                    <h3>{{ connection_count }}</h3> 
+                                    <p class="mb-0 text-muted">Your Connections</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card stat-card p-4">
+                            <div class="d-flex align-items-center gap-4">
+                                <div class="card-icon messages-icon"><i class="fa-solid fa-paper-plane"></i></div>
+                                <div>
+                                    <!-- THE FIX: This variable will now have the correct data -->
+                                    <h3>{{ student_message_count }}</h3> 
+                                    <p class="mb-0 text-muted">Student Messages</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
             
             <section class="dashboard-section">

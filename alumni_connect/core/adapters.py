@@ -20,7 +20,7 @@ class RestrictSocialLoginAdapter(DefaultSocialAccountAdapter):
         if not email:
             messages.error(request, "Login failed: Your social account did not provide an email address.")
             # Halt the process and redirect
-            raise ImmediateHttpResponse(redirect(reverse('login')))
+            raise ImmediateHttpResponse(redirect(reverse('core:login')))
 
         try:
             # Find a local user based ONLY on the email address.
@@ -41,4 +41,4 @@ class RestrictSocialLoginAdapter(DefaultSocialAccountAdapter):
             
             # Use ImmediateHttpResponse to stop the entire login process immediately
             # and redirect the user to our login page. Nothing else will run after this.
-            raise ImmediateHttpResponse(redirect(reverse('login')))
+            raise ImmediateHttpResponse(redirect(reverse('core:login')))

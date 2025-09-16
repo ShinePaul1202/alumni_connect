@@ -16,6 +16,7 @@ from .forms import (
 from .models import Profile, Connection, Notification
 from django.urls import reverse
 from .decorators import verification_required
+from messaging.models import Conversation
 
 # --- AUTH & ROUTING VIEWS ---
 def home_view(request):
@@ -105,24 +106,46 @@ def alumni_dashboard_view(request):
     try:
         profile = request.user.profile
     except Profile.DoesNotExist:
-        # If the profile is missing, log the user out safely instead of crashing.
         messages.error(request, "Your user profile could not be found. Please contact support.")
         logout(request)
         return redirect('core:login')
+
     if profile.is_verified and not profile.has_seen_verification_message:
-        
-        # 1. Add the success message that will be displayed in the template.
         messages.success(request, "Congratulations! Your account has been successfully verified. You now have full access to the platform.")
-        
-        # 2. Update the flag in the database so this message only appears once.
         profile.has_seen_verification_message = True
         profile.save(update_fields=['has_seen_verification_message'])
+
     recent_alumni = []
+    connection_count = 0
+    student_message_count = 0
+
     if profile.is_verified:
         recent_alumni = Profile.objects.filter(
             user_type='alumni', is_verified=True
         ).exclude(user=request.user).order_by('-user__date_joined')[:5]
-    context = { 'profile': profile, 'student_message_count': 0, 'recent_alumni': recent_alumni }
+
+        # --- THIS IS THE NEW LOGIC THAT WAS MISSING ---
+
+        # 1. Count accepted connections
+        connection_count = Connection.objects.filter(
+            (Q(sender=request.user) | Q(receiver=request.user)),
+            status=Connection.Status.ACCEPTED
+        ).count()
+
+        # 2. Count unique conversations with students
+        student_message_count = Conversation.objects.filter(
+            participants=request.user
+        ).filter(
+            memberships__user__profile__user_type='student'
+        ).distinct().count()
+
+    # --- THIS IS THE UPDATED CONTEXT ---
+    context = {
+        'profile': profile,
+        'recent_alumni': recent_alumni,
+        'connection_count': connection_count,          # Pass the correct connection count
+        'student_message_count': student_message_count  # Pass the correct student message count
+    }
     return render(request, 'core/alumni_dashboard.html', context)
 
 @login_required
@@ -243,7 +266,12 @@ def send_connection_request(request, user_id):
 def connection_requests_list(request):
     """Display a list of pending connection requests for the logged-in user."""
     pending_requests = Connection.objects.filter(receiver=request.user, status=Connection.Status.PENDING)
-    return render(request, 'core/connection_requests.html', {'requests': pending_requests})
+    user_profile = get_object_or_404(Profile, user=request.user)
+    context = {
+        'requests': pending_requests,
+        'profile': user_profile,  # Still need this for the image and verification check
+    }
+    return render(request, 'core/connection_requests.html', context)
 
 
 @login_required
@@ -296,6 +324,7 @@ def notification_list_view(request):
 
 @login_required
 def settings_home_view(request):
+    
     """
     Displays the main settings menu page.
     """
