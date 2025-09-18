@@ -1,0 +1,10 @@
+Hi {{ recipient_name }},
+
+Great news! {{ actor_name }} has accepted your connection request on AluLink.
+
+You can now view their profile and send them a message.
+
+View their profile: {{ profile_link }}
+
+Thanks,
+The AluLink Team

@@ -32,6 +32,8 @@ urlpatterns = [
     
     path('notifications/', views.notification_list_view, name='notification_list'),
     
+    path('connections/', views.connection_list_view, name='connection_list'),
+    
     # NEW "Settings Home" URL: This is the new entry point for the settings menu.
     path('account/settings/', views.settings_home_view, name='account_settings'),
     

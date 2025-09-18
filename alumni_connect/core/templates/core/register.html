@@ -62,21 +62,25 @@
 
         .info-section { animation: floatIn 0.8s ease-out forwards; }
         
-        .glass-card .form-control, .glass-card .form-select {
-            background-color: rgba(255, 255, 255, 0.85);
-            border: none;
-            color: #333;
+        /* --- CORRECTED AESTHETIC FOR FORM FIELDS --- */
+        .form-floating > .form-control,
+        .form-floating > .form-select {
+            background-color: #ffffff; /* Restored clean white background */
+            border: 1px solid #dee2e6; /* Subtle border */
+            color: #212529; /* Dark text for readability */
             height: 58px;
-        }
-        .glass-card .form-floating > label { color: #555; }
-        .glass-card .form-control:focus, .glass-card .form-select:focus {
-            background-color: white;
-            box-shadow: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
-        /* PERFECTION FIX: Hides label using a JS-driven class */
-        .form-floating.is-placeholder-selected > label {
-            visibility: hidden;
+        .form-floating > label {
+            color: #6c757d; /* Standard muted label color */
+        }
+
+        /* Polished focus state with a soft blue glow */
+        .form-floating > .form-control:focus,
+        .form-floating > .form-select:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
         }
         
         .field-error {
@@ -143,8 +147,13 @@
 
                             <hr class="border-light-subtle my-4">
 
-                            <div class="form-floating mb-3">{{ form.user_type }}<label for="{{ form.user_type.id_for_label }}">User Type</label><div class="field-error">{{ form.user_type.errors }}</div></div>
+                            <div class="form-floating mb-3">{{ form.user_type }}<label for="{{ form.user_type.id_for_label }}">I am a...</label><div class="field-error">{{ form.user_type.errors }}</div></div>
                             <div class="form-floating mb-3">{{ form.department }}<label for="{{ form.department.id_for_label }}">Department</label><div class="field-error">{{ form.department.errors }}</div></div>
+                            
+                            <div id="other-department-container" class="d-none">
+                                <div class="form-floating mb-3">{{ form.department_other }}<label for="{{ form.department_other.id_for_label }}">Please specify your department</label><div class="field-error">{{ form.department_other.errors }}</div></div>
+                            </div>
+                            
                             <div class="form-floating mb-3">{{ form.graduation_year }}<label for="{{ form.graduation_year.id_for_label }}">Graduation Year</label><div class="field-error">{{ form.graduation_year.errors }}</div></div>
 
                             <div id="alumni-fields" class="d-none">
@@ -161,59 +170,45 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Apply Bootstrap classes
+        // Apply Bootstrap classes to Django form fields
         document.querySelectorAll('#registration-form input:not([type="checkbox"])').forEach(field => field.classList.add('form-control'));
         document.querySelectorAll('#registration-form select').forEach(field => field.classList.add('form-select'));
         document.querySelectorAll('#registration-form input[type="checkbox"]').forEach(field => field.classList.add('form-check-input'));
 
-        // --- Start of perfected label logic ---
-        const selectsWithPlaceholder = document.querySelectorAll('#id_user_type, #id_department');
-        
-        function checkSelect(selectElement) {
-            const parent = selectElement.closest('.form-floating');
-            if (parent) {
-                // If the selected option has an empty value, it's a placeholder.
-                parent.classList.toggle('is-placeholder-selected', selectElement.value === '');
-            }
-        }
-
-        selectsWithPlaceholder.forEach(select => {
-            checkSelect(select); // Check on page load
-            select.addEventListener('change', () => checkSelect(select)); // Check on change
-        });
-        // --- End of perfected label logic ---
-
-        // Logic for showing/hiding conditional fields
+        // Conditional fields logic
         const userTypeSelect = document.getElementById("id_user_type");
         const alumniFields = document.getElementById("alumni-fields");
         const employedSwitch = document.getElementById("id_currently_employed");
         const currentJobFields = document.getElementById("current-job-fields");
         const pastJobSwitch = document.getElementById("id_had_past_job");
         const pastJobFields = document.getElementById("past-job-fields");
+        const departmentSelect = document.getElementById("id_department");
+        const otherDepartmentContainer = document.getElementById("other-department-container");
 
-        function toggleAlumniFields() {
-            alumniFields.classList.toggle('d-none', userTypeSelect.value !== "alumni");
-        }
-        function toggleCurrentJobFields() {
-            currentJobFields.classList.toggle('d-none', !employedSwitch.checked);
-        }
-        function togglePastJobFields() {
-            pastJobFields.classList.toggle('d-none', !pastJobSwitch.checked);
+        function toggleAlumniFields() { alumniFields.classList.toggle('d-none', userTypeSelect.value !== "alumni"); }
+        function toggleCurrentJobFields() { currentJobFields.classList.toggle('d-none', !employedSwitch.checked); }
+        function togglePastJobFields() { pastJobFields.classList.toggle('d-none', !pastJobSwitch.checked); }
+        function toggleOtherDepartment() {
+            if (otherDepartmentContainer && departmentSelect) {
+                otherDepartmentContainer.classList.toggle('d-none', departmentSelect.value !== 'Other');
+            }
         }
 
         userTypeSelect?.addEventListener("change", toggleAlumniFields);
         employedSwitch?.addEventListener("change", toggleCurrentJobFields);
         pastJobSwitch?.addEventListener("change", togglePastJobFields);
+        departmentSelect?.addEventListener("change", toggleOtherDepartment);
 
+        // Initial check on page load
         toggleAlumniFields();
         toggleCurrentJobFields();
         togglePastJobFields();
+        toggleOtherDepartment();
     });
     </script>
 </body>

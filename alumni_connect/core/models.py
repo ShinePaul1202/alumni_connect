@@ -43,7 +43,10 @@ class Profile(models.Model):
     past_company_name = models.CharField(max_length=100, blank=True, null=True)
 
     # Notification settings
-    email_on_new_message = models.BooleanField(default=True)
+    email_on_connection_accepted = models.BooleanField(
+        default=True, 
+        help_text="Send an email when someone accepts your connection request."
+    )
     
     def __str__(self):
         return f'{self.user.username} Profile'
@@ -111,3 +114,17 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.recipient.username}: {self.actor.username} {self.verb}"
+    
+class SearchHistory(models.Model):
+    """Stores a record of a user's search queries on the find_alumni page."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_history')
+    department = models.CharField(max_length=100, blank=True, null=True)
+    graduation_year = models.CharField(max_length=4, blank=True, null=True)
+    company = models.CharField(max_length=100, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"Search by {self.user.username} at {self.timestamp.strftime('%Y-%m-%d')}"    

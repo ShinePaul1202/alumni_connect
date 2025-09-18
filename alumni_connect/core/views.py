@@ -8,12 +8,17 @@ from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from django.db.models import Q
 from django.contrib.auth.forms import PasswordChangeForm
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
 # MODIFICATION: Imported the new form
 from .forms import (
     RegistrationForm, UserUpdateForm, ProfileUpdateForm, SettingsForm, 
     AccountUserUpdateForm, AccountProfileUpdateForm, AccountProfileSettingsForm
 )
-from .models import Profile, Connection, Notification
+from django.core.paginator import Paginator
+from .models import Profile, Connection, Notification, SearchHistory
+from .recommender import get_recommendations
 from django.urls import reverse
 from .decorators import verification_required
 from messaging.models import Conversation
@@ -35,20 +40,34 @@ def register_view(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             cleaned_data = form.cleaned_data
+            
+            # --- THIS IS THE FIX ---
+            # Determine the final department value
+            department_value = cleaned_data.get('department')
+            if department_value == 'OTHER':
+                # If they chose "Other", use the text they entered
+                final_department = cleaned_data.get('department_other')
+            else:
+                # Otherwise, use the value from the dropdown
+                final_department = department_value
+
             full_name = cleaned_data.get('full_name', '')
             first_name = full_name.split()[0] if full_name else ''
             last_name = ' '.join(full_name.split()[1:]) if len(full_name.split()) > 1 else ''
+            
             new_user = User.objects.create_user(
                 username=cleaned_data['username'], email=cleaned_data['email'],
                 password=cleaned_data['password'], first_name=first_name, last_name=last_name
             )
+            
+            # Use the 'final_department' variable when creating the Profile
             Profile.objects.create(
-                user=new_user, full_name=full_name, user_type=cleaned_data['user_type'],
-                department=cleaned_data['department'], graduation_year=cleaned_data.get('graduation_year'),
-                currently_employed=cleaned_data.get('currently_employed', False),
-                job_title=cleaned_data.get('job_title', ''), company_name=cleaned_data.get('company_name', ''),
-                had_past_job=cleaned_data.get('had_past_job', False),
-                past_job_title=cleaned_data.get('past_job_title', ''), past_company_name=cleaned_data.get('past_company_name', '')
+                user=new_user, 
+                full_name=full_name, 
+                user_type=cleaned_data['user_type'],
+                department=final_department, # <-- USE THE CORRECTED VARIABLE HERE
+                graduation_year=cleaned_data.get('graduation_year'),
+                # ... (rest of the fields are the same)
             )
             messages.success(request, 'Welcome aboard! Please sign in to continue.')
             return redirect('core:login')
@@ -75,29 +94,57 @@ def logout_view(request):
     return redirect('core:login')
 
 # --- USER-SPECIFIC DASHBOARD AND PROFILE VIEWS ---
+from .recommender import get_recommendations
+from .models import Connection, Profile
+
 @login_required
 def student_dashboard_view(request):
     try:
         profile = request.user.profile
     except Profile.DoesNotExist:
-        # If the profile is missing, log the user out safely instead of crashing.
         messages.error(request, "Your user profile could not be found. Please contact support.")
         logout(request)
         return redirect('core:login')
+
     if profile.is_verified and not profile.has_seen_verification_message:
         messages.success(request, "Congratulations! Your account has been successfully verified. You now have full access to the platform.")
-        
-        # Mark the message as "seen" so it doesn't show again
         profile.has_seen_verification_message = True
         profile.save(update_fields=['has_seen_verification_message'])
+
+    # --- Initialize all the data we need ---
     suggested_alumni = []
+    recent_alumni = []
+    connection_count = 0
+
     if profile.is_verified:
+        # 1. Get alumni from the student's own department (your original logic)
         suggested_alumni = Profile.objects.filter(
-            user_type='alumni', is_verified=True, department=profile.department
+            user_type='alumni', 
+            is_verified=True, 
+            department=profile.department
         ).exclude(user=request.user)
+
+        # --- THIS IS THE NEW LOGIC TO ADD ---
+        # 2. Get the 5 most recently joined alumni from ANY department
+        recent_alumni = Profile.objects.filter(
+            user_type='alumni', 
+            is_verified=True
+        ).exclude(user=request.user).order_by('-user__date_joined')[:5]
+        # --- End of new logic ---
+
+        # 3. Get the student's connection count (your original logic)
+        connection_count = Connection.objects.filter(
+            (Q(sender=request.user) | Q(receiver=request.user)),
+            status=Connection.Status.ACCEPTED
+        ).count()
+
+    # --- THIS IS THE UPDATED CONTEXT ---
     context = {
-        'profile': profile, 'alumni_count': Profile.objects.filter(user_type='alumni', is_verified=True).count(),
-        'suggested_alumni': suggested_alumni
+        'profile': profile,
+        'alumni_count': Profile.objects.filter(user_type='alumni', is_verified=True).count(),
+        'suggested_alumni': suggested_alumni,
+        'recent_alumni': recent_alumni, # <-- Pass the new list to the template
+        'connection_count': connection_count,
     }
     return render(request, 'core/student_dashboard.html', context)
 
@@ -206,28 +253,63 @@ def profile_page_view(request, user_id):
 @login_required
 @verification_required
 def find_alumni(request):
-    # Only fetch verified alumni (not students)
-    alumni_list = Profile.objects.filter(
-        is_verified=True,
-        user_type="alumni"  # It's better to filter on your model's user_type field
-    ).exclude(user=request.user)
-
-    # Optional: add filters (department, graduation_year, etc.)
-    department = request.GET.get("department")
-    if department:
-        alumni_list = alumni_list.filter(department__icontains=department)
-
-    graduation_year = request.GET.get("year")
-    if graduation_year:
-        alumni_list = alumni_list.filter(graduation_year=graduation_year)
-
-    # === FIX STEP 1: Get the logged-in user's profile ===
     user_profile = get_object_or_404(Profile, user=request.user)
 
-    return render(request, "core/find_alumni.html", {
-        "alumni_list": alumni_list,
-        "profile": user_profile,  # Add the profile to the context
-    })
+    # --- THE FIX: Use .strip() to handle empty searches correctly ---
+    department = request.GET.get("department", "").strip()
+    graduation_year = request.GET.get("year", "").strip()
+    company = request.GET.get("company", "").strip()
+
+    # is_searching is now only True if at least one field has actual content
+    is_searching = bool(department or graduation_year or company)
+
+    # Save search history only if it's a real search
+    if is_searching:
+        SearchHistory.objects.create(
+            user=request.user,
+            department=department,
+            graduation_year=graduation_year,
+            company=company
+        )
+
+    if is_searching:
+        # Step 1: Filter the alumni list based on the user's explicit query.
+        base_queryset = Profile.objects.filter(
+            is_verified=True, user_type="alumni"
+        ).exclude(user=request.user)
+        
+        if department:
+            base_queryset = base_queryset.filter(department__icontains=department)
+        if graduation_year:
+            try:
+                base_queryset = base_queryset.filter(graduation_year=int(graduation_year))
+            except (ValueError, TypeError):
+                pass
+        if company:
+            base_queryset = base_queryset.filter(company_name__icontains=company)
+        
+        # Step 2: Rank the filtered results using the AI recommender
+        recommendations = get_recommendations(user_profile, base_queryset=base_queryset)
+        alumni_profiles_list = [rec['profile'] for rec in recommendations]
+
+    else:
+        # If the form is submitted with empty fields, this block will now run correctly
+        recommendations = get_recommendations(user_profile)
+        alumni_profiles_list = [rec['profile'] for rec in recommendations]
+    
+    # Step 3: Paginate the final list
+    paginator = Paginator(alumni_profiles_list, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "profile": user_profile,
+        "alumni_list": page_obj,
+        "is_paginated": page_obj.has_other_pages(),
+        "page_obj": page_obj,
+        "is_searching": is_searching,
+    }
+    return render(request, "core/find_alumni.html", context)
 
 @login_required
 @verification_required
@@ -277,37 +359,81 @@ def connection_requests_list(request):
 @login_required
 @verification_required
 def respond_to_connection_request(request, request_id, action):
-    """Accept or decline a connection request and create a notification."""
     connection_request = get_object_or_404(Connection, id=request_id, receiver=request.user)
     
-    # The user who originally sent the request
     sender = connection_request.sender
+    actor = request.user
 
     if action == "accept":
         connection_request.status = Connection.Status.ACCEPTED
         connection_request.save()
         messages.success(request, f"You are now connected with {sender.username}.")
 
-        # Create a notification for the user who sent the request
+        profile_link = request.build_absolute_uri(reverse('core:profile_page', kwargs={'user_id': actor.id}))
         Notification.objects.create(
             recipient=sender,
-            actor=request.user,
+            actor=actor,
             verb='accepted your connection request.',
-            link=reverse('core:profile_page', kwargs={'user_id': request.user.id})
+            link=profile_link
         )
 
+        # --- NEW: Logic to send the email notification ---
+        if sender.profile.email_on_connection_accepted:
+            context = {
+                'recipient_name': sender.profile.full_name or sender.username,
+                'actor_name': actor.profile.full_name or actor.username,
+                'profile_link': profile_link,
+            }
+            email_plain_text = render_to_string('core/emails/connection_accepted_email.txt', context)
+            email_html = render_to_string('core/emails/connection_accepted_email.html', context)
+
+            send_mail(
+                subject=f"{actor.profile.full_name or actor.username} accepted your connection request!",
+                message=email_plain_text,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[sender.email],
+                html_message=email_html,
+                fail_silently=False
+            )
+        # --- End of new email logic ---
+
     elif action == "decline":
-        # Create a notification for the user who sent the request
         Notification.objects.create(
             recipient=sender,
-            actor=request.user,
+            actor=actor,
             verb='declined your connection request.'
-            # No link is needed for a decline
         )
         connection_request.delete()
         messages.info(request, "Connection request declined.")
 
     return redirect('core:connection_requests')
+
+@login_required
+@verification_required
+def connection_list_view(request):
+    """Displays a list of the user's accepted connections."""
+    
+    # Find all connections where the user is either the sender or receiver
+    # and the status is 'accepted'.
+    connections = Connection.objects.filter(
+        (Q(sender=request.user) | Q(receiver=request.user)),
+        status=Connection.Status.ACCEPTED
+    )
+
+    # From these connections, get the list of the *other* users' profiles.
+    connection_profiles = []
+    for conn in connections:
+        if conn.sender == request.user:
+            connection_profiles.append(conn.receiver.profile)
+        else:
+            connection_profiles.append(conn.sender.profile)
+
+    context = {
+        'profile': request.user.profile,
+        'connection_profiles': connection_profiles
+    }
+    return render(request, 'core/connection_list.html', context)
+
 
 @login_required
 def notification_list_view(request):
@@ -443,3 +569,4 @@ def notification_settings_view(request):
         'active_tab': 'notifications'
     }
     return render(request, 'core/account/settings_notifications.html', context)
+

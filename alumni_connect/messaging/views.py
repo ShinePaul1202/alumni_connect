@@ -7,6 +7,7 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib import messages as flash_messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.urls import reverse
 
 from .models import Conversation, ConversationParticipant, Message
 from core.models import Connection, Profile
@@ -49,22 +50,33 @@ def _get_or_create_1to1_conversation(user1, user2):
 
 @login_required
 def inbox(request):
-    """Show list of conversations for the logged-in user."""
     if not user_is_verified(request.user):
         flash_messages.error(request, "Messaging is available after your profile is verified.")
-        return redirect("core:account_settings")  # adjust if you use a different url name
+        return redirect("core:account_settings")
 
+    # --- NEW LOGIC: Check for a filter in the URL ---
+    filter_type = request.GET.get('filter')
+    
+    # Start with all of the user's conversations
     convs = request.user.conversations.all().order_by("-updated_at")
-    # Build a small list so template can easily access "other" and "last"
+
+    # If the filter is 'students', modify the query
+    if filter_type == 'students':
+        convs = convs.filter(memberships__user__profile__user_type='student')
+
     conv_list = []
     for c in convs:
         other = c.participants.exclude(pk=request.user.pk).first()
         last = c.last_message()
         conv_list.append({"conversation": c, "other": other, "last": last})
+    
     profile = get_object_or_404(Profile, user=request.user)
+    
+    # --- UPDATED CONTEXT ---
     context = {
         "conversations": conv_list,
-        "profile": profile, # <-- Add the profile here
+        "profile": profile,
+        "active_filter": filter_type # Pass the filter to the template
     }
     return render(request, "messaging/inbox.html", context)
 
@@ -72,14 +84,13 @@ def inbox(request):
 @login_required
 def chat_with_user(request, user_id):
     """
-    Checks for an accepted connection first, then opens or creates a 1:1
-    conversation with the given user id, then redirects to conversation view.
+    Finds or creates a 1:1 conversation and redirects to the main inbox,
+    with a query parameter to auto-open the chat via JavaScript.
     """
     other = get_object_or_404(User, pk=user_id)
     if other == request.user:
         return redirect("messaging:inbox")
 
-    # --- GATEKEEPING LOGIC ---
     connection = Connection.objects.filter(
         status=Connection.Status.ACCEPTED
     ).filter(
@@ -88,13 +99,13 @@ def chat_with_user(request, user_id):
 
     if not connection:
         flash_messages.error(request, "You must be connected with this user to send a message.")
-        # Redirect to the user's profile page, or wherever is appropriate
         return redirect("core:profile_page", user_id=user_id)
-    # --- END GATEKEEPING LOGIC ---
-
-    # If the check passes, proceed as before
+    
     convo = _get_or_create_1to1_conversation(request.user, other)
-    return redirect("messaging:conversation", pk=convo.pk)
+    
+    # --- THE FIX: Redirect to the inbox with a parameter ---
+    inbox_url = reverse('messaging:inbox')
+    return redirect(f'{inbox_url}?open_chat={convo.pk}')
 
 
 @login_required

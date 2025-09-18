@@ -7,10 +7,19 @@ from .models import Profile
 # --- REGISTRATION FORM ---
 class RegistrationForm(forms.Form):
     DEPARTMENT_CHOICES = [
-        ('', 'Select your Department'), 
+        ('', 'Select your Department'),
+        ('MCA', 'Master of Computer Applications'),
         ('Computer Science', 'Computer Science'), 
         ('Electrical Engineering', 'Electrical Engineering'),
         ('Mechanical Engineering', 'Mechanical Engineering'),
+        ('Civil Engineering', 'Civil Engineering'),
+        ('Biotechnology', 'Biotechnology'),
+        ('Information Technology', 'Information Technology'),
+        ('Electronics and Communication', 'Electronics and Communication'),
+        ('Industrial Engineering', 'Industrial Engineering'),
+        ('Materials Science', 'Materials Science'),
+        ('Architecture', 'Architecture'),
+        ('Other', 'Other'),
     ]
 
     full_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'placeholder': 'Your Full Name (e.g., Shine Paul)'}))
@@ -21,6 +30,12 @@ class RegistrationForm(forms.Form):
 
     user_type = forms.ChoiceField(choices=[('student', 'Student'), ('alumni', 'Alumni')], widget=forms.Select(attrs={'id': 'id_user_type'}))
     department = forms.ChoiceField(choices=DEPARTMENT_CHOICES)
+    department_other = forms.CharField(
+        max_length=100, 
+        required=False, # This field is not required by default
+        label="Your Department Name",
+        widget=forms.TextInput(attrs={'placeholder': 'Please specify your department'})
+    )
     graduation_year = forms.IntegerField(required=True, widget=forms.NumberInput(attrs={'placeholder': 'Graduation Year'}))
     currently_employed = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'id': 'id_currently_employed'}))
     job_title = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': 'Current Job Title'}))
@@ -41,6 +56,12 @@ class RegistrationForm(forms.Form):
         cleaned_data = super().clean()
         if cleaned_data.get("password") != cleaned_data.get("password2"):
             raise forms.ValidationError("Passwords do not match. Please try again.")
+        department_choice = cleaned_data.get('department')
+        department_other_text = cleaned_data.get('department_other')
+
+        if department_choice == 'Other' and not department_other_text:
+            self.add_error('department_other', 'This field is required when you select "Other".')
+        
         return cleaned_data
 
     def clean_email(self):
@@ -71,6 +92,7 @@ class ProfileUpdateForm(forms.ModelForm):
             'past_company_name': forms.TextInput(attrs={'placeholder': 'e.g., Microsoft'}),
         }
         labels = {
+            'bio': 'About Me',
             'avatar': 'Change Profile Picture', 'currently_employed': 'I am currently employed', 'job_title': 'Current Job Title',
             'company_name': 'Current Company', 'had_past_job': 'I have past work experience', 'past_job_title': 'Past Job Title',
             'past_company_name': 'Past Company',
@@ -80,9 +102,18 @@ class ProfileUpdateForm(forms.ModelForm):
 class SettingsForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['email_on_new_message']
-        labels = { 'email_on_new_message': 'Email me when I receive a new message', }
-        widgets = { 'email_on_new_message': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'}), }
+        # The list now only contains our one, correct field
+        fields = ['email_on_connection_accepted']
+        
+        labels = { 
+            # This is now the only label
+            'email_on_connection_accepted': 'Email me when a connection request is accepted',
+        }
+        
+        widgets = { 
+            # This is now the only widget
+            'email_on_connection_accepted': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'}),
+        }
 
 class AccountUserUpdateForm(forms.ModelForm):
     email = forms.EmailField(required=True)

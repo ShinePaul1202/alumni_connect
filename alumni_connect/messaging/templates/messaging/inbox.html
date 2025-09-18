@@ -36,6 +36,7 @@
         .profile-dropdown-menu a:hover { background-color: #f1f5f9; }
         .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; cursor: not-allowed; background-color: transparent; }
         .sidebar-nav .nav-item.disabled:hover { background-color: transparent; border-left-color: transparent; }
+        
         .chat-app-container { flex-grow: 1; display: flex; background-color: var(--card-bg); border-radius: 1rem; box-shadow: 0 4px 6px var(--shadow-color); overflow: hidden; min-height: 0; }
         .chat-list-wrapper { width: 340px; flex-shrink: 0; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .chat-list-header { padding: 1.25rem; border-bottom: 1px solid var(--border-color); }
@@ -50,17 +51,16 @@
         .chat-window-wrapper { flex-grow: 1; min-width: 0; }
         .chat-container-card { display: flex; flex-direction: column; height: 100%; }
         .chat-header { flex-shrink: 0; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem; }
-        .chat-body { flex-grow: 1; overflow-y: auto; padding: 1.5rem; min-height: 0; }
-        .chat-footer { flex-shrink: 0; border-top: 1px solid var(--border-color); background-color: #f8fafc; padding: 1rem 1.5rem; }
+        .chat-body { flex-grow: 1; overflow-y: auto; padding: 1.5rem; min-height: 0; background-color: #f1f5f9; }
+        .chat-footer { flex-shrink: 0; border-top: 1px solid var(--border-color); background-color: var(--card-bg); padding: 1rem 1.5rem; }
         .msg-bubble { max-width: 75%; padding: 0.75rem 1.25rem; border-radius: 1.25rem; word-wrap: break-word; }
-        .msg-sent { background-color: var(--primary-color); color: white; }
-        .msg-received { background-color: #e2e8f0; color: var(--text-dark); }
+        .msg-sent { background-color: var(--primary-color); color: white; border-bottom-right-radius: 0.25rem; }
+        .msg-received { background-color: var(--card-bg); color: var(--text-dark); border-bottom-left-radius: 0.25rem; }
         .msg-time { font-size: 0.75rem; opacity: 0.8; }
         #msg-input { border-radius: 999px; background-color: #f1f5f9; border: none; padding: 0.6rem 1.2rem; }
         #msg-input:focus { background-color: white; border: 1px solid var(--primary-color); box-shadow: none; }
         .delete-msg-btn { opacity: 0; transition: opacity 0.2s ease; background: none; border: none; }
         .msg-wrapper:hover .delete-msg-btn { opacity: 0.7; }
-
         .chat-body.selection-mode .msg-wrapper.can-select { cursor: pointer; padding: 0.25rem; border-radius: 0.5rem; transition: background-color 0.2s ease; }
         .chat-body.selection-mode .msg-wrapper.selected { background-color: #dbe9ff; }
         .chat-body.selection-mode .msg-wrapper:not(.can-select) { cursor: not-allowed; opacity: 0.6; }
@@ -114,12 +114,26 @@
             <div class="chat-app-container">
                 <div class="chat-list-wrapper" id="chat-list-col">
                     <div class="chat-list-header">
-                        <input type="text" class="form-control chat-list-search" placeholder="Search or start new chat">
+                        <input type="text" id="chat-search-input" class="form-control chat-list-search mb-3" placeholder="Search by name...">
+                        <div class="d-flex gap-2">
+                            <select id="chat-usertype-filter" class="form-select form-select-sm">
+                                <option value="all" selected>All User Types</option>
+                                <option value="student">Students</option>
+                                <option value="alumni">Alumni</option>
+                            </select>
+                            <select id="chat-department-filter" class="form-select form-select-sm">
+                                <option value="all" selected>All Departments</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="list-group list-group-flush chat-list" id="chat-list-container">
                         {% for item in conversations %}
                             {% with convo=item.conversation other=item.other last=item.last %}
-                            <a href="{% url 'messaging:conversation' pk=convo.pk %}" class="list-group-item list-group-item-action p-3 chat-link">
+                            <a href="{% url 'messaging:conversation' pk=convo.pk %}" 
+                               class="list-group-item list-group-item-action p-3 chat-link"
+                               data-name="{{ other.get_full_name|default:other.username|lower }}"
+                               data-usertype="{{ other.profile.user_type }}"
+                               data-department="{{ other.profile.department }}">
                                 <div class="d-flex align-items-center gap-3">
                                     <img src="{{ other.profile.avatar.url|default:'/static/core/img/avatar-placeholder.png' }}" alt="Avatar" class="avatar">
                                     <div class="flex-grow-1 overflow-hidden">
@@ -163,7 +177,7 @@
         });
     </script>
     
-    <!-- FINAL, COMPLETE, and CORRECTED JavaScript for Dynamic Chat -->
+    <!-- FINAL, COMPLETE JavaScript for Dynamic Chat -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const chatWindowContainer = document.getElementById('chat-window-container');
@@ -320,14 +334,10 @@
                     chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><p class="text-danger">Could not load conversation.</p></div>`;
                 });
         });
-
-        // --- CORRECTED: Consolidated Event Listener for all actions inside the chat window ---
+        
         chatWindowContainer.addEventListener('click', async function(event) {
-            // Back button
             if (event.target.closest('#back-to-chats-btn')) { body.classList.remove('mobile-chat-visible'); exitSelectionMode(); }
-            // Cancel selection
             if (event.target.closest('#cancel-selection-btn')) { exitSelectionMode(); }
-            // Clear file preview
             if (event.target.closest('#file-preview-clear')) {
                 const form = document.getElementById('send-form');
                 if (form) {
@@ -337,14 +347,12 @@
                 }
             }
 
-            // Toggle selection if in selection mode
             const msgWrapper = event.target.closest('.msg-wrapper.can-select');
             if (selectionMode && msgWrapper) {
                 toggleMessageSelection(msgWrapper);
-                return; // Stop further actions
+                return;
             }
             
-            // Single delete button
             const deleteBtn = event.target.closest('.delete-msg-btn');
             if (deleteBtn && !selectionMode) {
                 if (!confirm('Are you sure you want to delete this message?')) return;
@@ -358,7 +366,6 @@
                 } catch (err) { alert('An error occurred.'); }
             }
 
-            // Bulk delete button
             const deleteSelectedBtn = event.target.closest('#delete-selected-btn');
             if (deleteSelectedBtn && selectedMessages.size > 0) {
                 if (!confirm(`Are you sure you want to delete ${selectedMessages.size} messages?`)) return;
@@ -377,25 +384,23 @@
             }
         });
 
-        // --- Event Listeners for Long Press (mousedown, touchstart, etc.) ---
-        chatWindowContainer.addEventListener('mousedown', startPressTimer);
-        chatWindowContainer.addEventListener('mouseup', cancelPressTimer);
-        chatWindowContainer.addEventListener('mouseleave', cancelPressTimer);
-        chatWindowContainer.addEventListener('touchstart', startPressTimer, {passive: true});
-        chatWindowContainer.addEventListener('touchend', cancelPressTimer);
-        chatWindowContainer.addEventListener('touchcancel', cancelPressTimer);
-
-        function startPressTimer(event) {
-            const msgWrapper = event.target.closest('.msg-wrapper');
+        chatWindowContainer.addEventListener('mousedown', (e) => {
+            const msgWrapper = e.target.closest('.msg-wrapper');
             if (msgWrapper && msgWrapper.querySelector('.delete-msg-btn') && !selectionMode) {
                 pressTimer = window.setTimeout(() => enterSelectionMode(msgWrapper), 500);
             }
-        }
-        function cancelPressTimer() {
-            clearTimeout(pressTimer);
-        }
+        });
+        chatWindowContainer.addEventListener('mouseup', () => clearTimeout(pressTimer));
+        chatWindowContainer.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+        chatWindowContainer.addEventListener('touchstart', (e) => {
+             const msgWrapper = e.target.closest('.msg-wrapper');
+            if (msgWrapper && msgWrapper.querySelector('.delete-msg-btn') && !selectionMode) {
+                pressTimer = window.setTimeout(() => enterSelectionMode(msgWrapper), 500);
+            }
+        }, {passive: true});
+        chatWindowContainer.addEventListener('touchend', () => clearTimeout(pressTimer));
+        chatWindowContainer.addEventListener('touchcancel', () => clearTimeout(pressTimer));
 
-        // --- File Input Change Listener ---
         chatWindowContainer.addEventListener('change', function(event) {
             const fileInput = event.target;
             if (fileInput.matches('[name="file"]')) {
@@ -411,7 +416,6 @@
             }
         });
         
-        // --- Form Submission Listener ---
         chatWindowContainer.addEventListener('submit', async function(event) {
             if (event.target.id !== 'send-form') return;
             event.preventDefault();
@@ -442,6 +446,67 @@
                 alert("An error occurred while sending the message.");
             }
         });
+
+        // --- Auto-open chat from URL parameter ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const openChatId = urlParams.get('open_chat');
+        if (openChatId) {
+            const chatLinkToOpen = document.querySelector(`a.chat-link[href='/messages/c/${openChatId}/']`);
+            if (chatLinkToOpen) {
+                chatLinkToOpen.click();
+            }
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // --- Chat Search/Filter Script ---
+        const searchInput = document.getElementById('chat-search-input');
+        const userTypeFilter = document.getElementById('chat-usertype-filter');
+        const departmentFilter = document.getElementById('chat-department-filter');
+        const originalConversations = Array.from(chatListContainer.querySelectorAll('.chat-link'));
+        const departments = new Set();
+        originalConversations.forEach(convo => {
+            const dept = convo.dataset.department;
+            if (dept) departments.add(dept);
+        });
+        departments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            departmentFilter.appendChild(option);
+        });
+
+        function filterChats() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedUserType = userTypeFilter.value;
+            const selectedDepartment = departmentFilter.value;
+            let visibleCount = 0;
+
+            originalConversations.forEach(convo => {
+                const nameMatch = convo.dataset.name.includes(searchTerm);
+                const userTypeMatch = (selectedUserType === 'all' || convo.dataset.usertype === selectedUserType);
+                const departmentMatch = (selectedDepartment === 'all' || convo.dataset.department === selectedDepartment);
+
+                if (nameMatch && userTypeMatch && departmentMatch) {
+                    convo.style.display = '';
+                    visibleCount++;
+                } else {
+                    convo.style.display = 'none';
+                }
+            });
+
+            let noResultsMsg = chatListContainer.querySelector('.no-results-message');
+            if (visibleCount === 0 && !noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'p-4 text-center text-muted no-results-message';
+                noResultsMsg.textContent = 'No conversations match your filters.';
+                chatListContainer.appendChild(noResultsMsg);
+            } else if (visibleCount > 0 && noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+        searchInput.addEventListener('input', filterChats);
+        userTypeFilter.addEventListener('change', filterChats);
+        departmentFilter.addEventListener('change', filterChats);
 
     });
     </script>
