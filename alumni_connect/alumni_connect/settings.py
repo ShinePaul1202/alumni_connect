@@ -10,6 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+# ... the rest of your settings.py file starts here ...
+import os
+# ...
 from pathlib import Path
 from django.contrib.messages import constants as messages
 import os  # <-- ADD THIS LINE
@@ -34,12 +37,14 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'core',
     'django.contrib.sites',
 
@@ -55,6 +60,7 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -86,6 +92,9 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = 'alumni_connect.wsgi.application'
+ASGI_APPLICATION = 'alumni_connect.asgi.application'
+
+
 
 
 # Database
@@ -103,6 +112,14 @@ DATABASES = {
 }
 
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -133,6 +150,11 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
 
 # Static files (CSS, JavaScript, Images)
@@ -172,10 +194,10 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_ADAPTER = 'core.adapters.RestrictSocialLoginAdapter' 
 
 # --- Fix for deprecation warnings ---
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email' 
-ACCOUNT_EMAIL_REQUIRED = True                  
-ACCOUNT_EMAIL_VERIFICATION = 'none'            
-ACCOUNT_UNIQUE_EMAIL = True 
+ACCOUNT_LOGIN_METHODS = ['username', 'email']
+ACCOUNT_SIGNUP_FIELDS = ['username', 'email']
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_UNIQUE_EMAIL = True
 # === End Allauth Settings ===
 
 # Media files (User Uploads)

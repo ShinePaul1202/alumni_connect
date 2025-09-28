@@ -9,80 +9,68 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --sidebar-bg: #1e293b; --main-bg: #f8fafc; --text-dark: #0f172a; --text-light: #e2e8f0; --text-muted: #64748b; --primary-color: #3b82f6; --border-color: #e2e8f0; --card-bg: white; --shadow-color: rgba(99, 102, 241, 0.1); --sidebar-width: 260px;
+            --primary-color: #3b82f6; --sidebar-width: 260px; --text-dark: #0f172a;
+            --text-muted: #64748b; --border-color: #e2e8f0;
         }
-        html, body { height: 100%; overflow: hidden; }
-        .dashboard-container { height: 100vh; display: flex; }
-        .main-content { flex-grow: 1; height: 100vh; display: flex; flex-direction: column; padding: 2.5rem; min-width: 0; position: relative; }
-        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; }
-        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; display: flex; flex-direction: column; color: var(--text-light); flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease-in-out; }
-        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
-        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
-        .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); }
-        .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
+        html, body { font-family: 'Poppins', sans-serif; margin: 0; overflow: hidden; height: 100vh; }
+        .dashboard-container { display: flex; height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: linear-gradient(-45deg, #1d2b64, #485563, #2b5876, #4e4376); background-size: 400% 400%; animation: gradientAnimation 15s ease infinite; padding: 1.5rem; display: flex; flex-direction: column; color: white; flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease-in-out; position: relative; overflow: hidden; }
+        @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .floating-particle { position: absolute; width: 4px; height: 4px; background: rgba(59, 130, 246, 0.6); border-radius: 50%; pointer-events: none; animation: floatUp 6s ease-out infinite; }
+        @keyframes floatUp { 0% { opacity: 0; transform: translateY(100px) scale(0); } 10% { opacity: 1; transform: translateY(80px) scale(1); } 50% { opacity: 0.8; transform: translateY(-20px) scale(1.2); } 100% { opacity: 0; transform: translateY(-120px) scale(0.5); } }
+        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; position: relative; z-index: 10; }
+        .brand-logo svg { animation: brandGlow 3s ease-in-out infinite; }
+        @keyframes brandGlow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3)); } 50% { transform: scale(1.01); filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.5)); } }
+        .sidebar-nav { position: relative; z-index: 10; }
+        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.75rem; border-radius: 1rem; color: rgba(255, 255, 255, 0.9); text-decoration: none; transition: all 0.3s ease; position: relative; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .sidebar-nav .nav-item::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%); border-radius: 1rem; opacity: 0; transition: opacity 0.3s ease; }
+        .sidebar-nav .nav-item:not(.active):hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px) translateX(5px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); border-color: rgba(255, 255, 255, 0.2); }
+        .sidebar-nav .nav-item:not(.active):hover::before { opacity: 1; }
+        .sidebar-nav .nav-item.active { background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff; font-weight: 500; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4); transform: translateY(-3px); }
+        .sidebar-nav .nav-item.active::before { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%); opacity: 1; }
         .sidebar-nav .nav-item i { width: 20px; text-align: center; }
-        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-shrink: 0; }
-        .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; }
+        .sidebar-nav .nav-item.disabled { color: rgba(255, 255, 255, 0.4); pointer-events: none; }
+        .main-content { flex-grow: 1; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 2.5rem; width: calc(100% - var(--sidebar-width)); position: relative; height: 100vh; display: flex; flex-direction: column; min-width: 0; }
+        .main-content > * { position: relative; z-index: 2; }
+        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 1.5rem 2rem; border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); flex-shrink: 0; }
+        .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; color: var(--text-dark); }
         .header-title .main-subtitle { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
         .profile-dropdown { position: relative; }
-        .profile-dropdown-btn img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; cursor: pointer; transition: box-shadow 0.2s ease; }
-        .profile-dropdown-btn:hover img { box-shadow: 0 0 0 3px var(--primary-color); }
-        .profile-dropdown-menu { position: absolute; top: 100%; right: 0; min-width: 200px; background: white; border-radius: 0.75rem; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px var(--shadow-color); padding: 0.5rem 0; z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease; }
+        .profile-dropdown-btn img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; cursor: pointer; transition: all 0.3s ease; border: 2px solid rgba(59, 130, 246, 0.3); }
+        .profile-dropdown-btn:hover img { transform: scale(1.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        .profile-dropdown-menu { position: absolute; top: 100%; right: 0; min-width: 200px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 1rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 0.5rem 0; z-index: 9999; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s ease; }
         .profile-dropdown:hover .profile-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-        .profile-dropdown-menu a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: var(--text-dark); text-decoration: none; font-size: 0.95rem; }
-        .profile-dropdown-menu a:hover { background-color: #f1f5f9; }
-        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; cursor: not-allowed; background-color: transparent; }
-        .sidebar-nav .nav-item.disabled:hover { background-color: transparent; border-left-color: transparent; }
-        
-        .chat-app-container { flex-grow: 1; display: flex; background-color: var(--card-bg); border-radius: 1rem; box-shadow: 0 4px 6px var(--shadow-color); overflow: hidden; min-height: 0; }
-        .chat-list-wrapper { width: 340px; flex-shrink: 0; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .chat-list-header { padding: 1.25rem; border-bottom: 1px solid var(--border-color); }
-        .chat-list-search { background-color: #f1f5f9; border: none; border-radius: 999px; padding: 0.6rem 1.2rem; }
+        .profile-dropdown-menu a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: var(--text-dark); text-decoration: none; font-size: 0.95rem; transition: background-color 0.2s ease; }
+        .profile-dropdown-menu a:hover { background: rgba(59, 130, 246, 0.1); }
+        .chat-app-container { flex-grow: 1; display: flex; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08); overflow: hidden; min-height: 0; }
+        .chat-list-wrapper { width: 340px; flex-shrink: 0; border-right: 1px solid rgba(229, 231, 235, 0.5); display: flex; flex-direction: column; }
+        .chat-list-header { padding: 1.5rem; border-bottom: 1px solid rgba(229, 231, 235, 0.3); background: rgba(248, 250, 252, 0.5); }
+        .chat-list-search { background: rgba(241, 245, 249, 0.8); border: 1px solid rgba(229, 231, 235, 0.5); border-radius: 1rem; padding: 0.75rem 1.2rem; font-weight: 500; transition: all 0.3s ease; }
+        .chat-list-search:focus { background: white; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .form-select { border-radius: 0.75rem; border: 1px solid rgba(229, 231, 235, 0.5); padding: 0.5rem 0.75rem; font-size: 0.875rem; background: rgba(248, 250, 252, 0.8); transition: all 0.3s ease; }
+        .form-select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         .chat-list { flex-grow: 1; overflow-y: auto; }
-        .chat-link { border-bottom: 1px solid var(--border-color); }
-        .chat-link .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-        .last-message { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9rem; color: var(--text-muted); }
-        .chat-time { font-size: 0.8rem; color: var(--text-muted); }
-        .chat-link.active { background-color: #eef5ff !important; }
-        .chat-link:last-child { border-bottom: none; }
-        .chat-window-wrapper { flex-grow: 1; min-width: 0; }
-        .chat-container-card { display: flex; flex-direction: column; height: 100%; }
-        .chat-header { flex-shrink: 0; border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem; }
-        .chat-body { flex-grow: 1; overflow-y: auto; padding: 1.5rem; min-height: 0; background-color: #f1f5f9; }
-        .chat-footer { flex-shrink: 0; border-top: 1px solid var(--border-color); background-color: var(--card-bg); padding: 1rem 1.5rem; }
-        .msg-bubble { max-width: 75%; padding: 0.75rem 1.25rem; border-radius: 1.25rem; word-wrap: break-word; }
-        .msg-sent { background-color: var(--primary-color); color: white; border-bottom-right-radius: 0.25rem; }
-        .msg-received { background-color: var(--card-bg); color: var(--text-dark); border-bottom-left-radius: 0.25rem; }
-        .msg-time { font-size: 0.75rem; opacity: 0.8; }
-        #msg-input { border-radius: 999px; background-color: #f1f5f9; border: none; padding: 0.6rem 1.2rem; }
-        #msg-input:focus { background-color: white; border: 1px solid var(--primary-color); box-shadow: none; }
-        .delete-msg-btn { opacity: 0; transition: opacity 0.2s ease; background: none; border: none; }
-        .msg-wrapper:hover .delete-msg-btn { opacity: 0.7; }
-        .chat-body.selection-mode .msg-wrapper.can-select { cursor: pointer; padding: 0.25rem; border-radius: 0.5rem; transition: background-color 0.2s ease; }
-        .chat-body.selection-mode .msg-wrapper.selected { background-color: #dbe9ff; }
-        .chat-body.selection-mode .msg-wrapper:not(.can-select) { cursor: not-allowed; opacity: 0.6; }
-        .chat-body.selection-mode .delete-msg-btn { display: none; }
-        .chat-container-card.selection-active .chat-header, .chat-container-card.selection-active .chat-footer { display: none !important; }
-        .chat-container-card.selection-active #selection-action-bar { display: flex !important; }
-
-        @media (max-width: 991.98px) { 
-            .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.3s ease-in-out; } 
-            body.sidebar-visible .sidebar { transform: translateX(0); } 
-            .main-content { width: 100%; padding: 1rem; } 
-            .header-title { display: none; } 
-            .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } 
-            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
-            .chat-window-wrapper { display: none; }
-            .chat-list-wrapper { width: 100%; border-right: none; }
-            body.mobile-chat-visible .chat-list-wrapper { display: none; }
-            body.mobile-chat-visible .chat-window-wrapper { display: flex; width: 100%; }
-            body.mobile-chat-visible .main-header { display: none; }
-            body.mobile-chat-visible .main-content { padding: 0; }
-            body.mobile-chat-visible .chat-app-container { height: 100%; border-radius: 0; }
-        }
+        .chat-link-wrapper { position: relative; border-bottom: 1px solid rgba(229, 231, 235, 0.3); }
+        .chat-link-wrapper:last-child { border-bottom: none; }
+        .chat-link { display: block; padding: 1rem 1.5rem; text-decoration: none; color: inherit; transition: all 0.3s ease; position: relative; }
+        .chat-link:hover { background: rgba(59, 130, 246, 0.05); transform: translateX(5px); }
+        .chat-link.active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%); border-left: 4px solid var(--primary-color); }
+        .chat-link .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(59, 130, 246, 0.2); transition: all 0.3s ease; }
+        .chat-link:hover .avatar { transform: scale(1.05); border-color: rgba(59, 130, 246, 0.4); }
+        .last-message { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
+        .chat-time { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        .delete-chat-btn { position: absolute; top: 12px; right: 12px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px; opacity: 0; transition: all 0.3s ease; z-index: 100; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; }
+        .delete-chat-btn:hover { background: #dc2626; color: white; transform: scale(1.1); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .chat-link-wrapper:hover .delete-chat-btn { opacity: 1; }
+        .chat-window-wrapper { flex-grow: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.3s ease-in-out; } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1rem; } .header-title { display: none; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } .chat-window-wrapper { display: none; } .chat-list-wrapper { width: 100%; border-right: none; } body.mobile-chat-visible .chat-list-wrapper { display: none; } body.mobile-chat-visible .chat-window-wrapper { display: flex; width: 100%; } body.mobile-chat-visible .main-header { display: none; } body.mobile-chat-visible .main-content { padding: 0; } body.mobile-chat-visible .chat-app-container { height: 100%; border-radius: 0; } }
     </style>
 </head>
 
@@ -90,7 +78,7 @@
     <div class="dashboard-container">
         <div class="overlay" id="overlay"></div>
         <aside class="sidebar" id="sidebar">
-            <a href="{% url 'core:home' %}" class="brand-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg><span>AluLink</span></a>
+            <a href="{% url 'core:home' %}" class="brand-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="outer-circle-nav" style="transform-origin: center;"><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g><g id="inner-circle-nav" style="transform-origin: center;"><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g><g id="needle-nav"><path d="M12.5 12L19 5.5" stroke="#0D6EFD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g></svg><span>AluLink</span></a>
             <nav class="sidebar-nav mt-3">
                 {% if profile.user_type == 'student' %}<a href="{% url 'core:student_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% else %}<a href="{% url 'core:alumni_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% endif %}
                 {% if profile.is_verified and not profile.fraud_warning %}
@@ -108,7 +96,7 @@
         <main class="main-content">
             <header class="main-header">
                 <div class="d-flex align-items-center"><button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button"><i class="fa-solid fa-bars"></i></button><div class="header-title"><h1 class="main-title">Messages</h1><p class="main-subtitle d-none d-lg-block">View and manage your conversations.</p></div></div>
-                <div class="profile-dropdown"><div class="profile-dropdown-btn"><img src="{{ profile.avatar.url }}" alt="Profile"></div><div class="profile-dropdown-menu"><a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a><a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i>Settings</a><hr class="my-1"><a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a></div></div>
+                <div class="profile-dropdown"><div class="profile-dropdown-btn"><img src="{{ profile.avatar.url }}" alt="Profile"></div><div class="profile-dropdown-menu"><a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a><a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i> Settings</a><hr class="my-1"><a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a></div></div>
             </header>
 
             <div class="chat-app-container">
@@ -128,25 +116,38 @@
                     </div>
                     <div class="list-group list-group-flush chat-list" id="chat-list-container">
                         {% for item in conversations %}
-                            {% with convo=item.conversation other=item.other last=item.last %}
-                            <a href="{% url 'messaging:conversation' pk=convo.pk %}" 
-                               class="list-group-item list-group-item-action p-3 chat-link"
-                               data-name="{{ other.get_full_name|default:other.username|lower }}"
-                               data-usertype="{{ other.profile.user_type }}"
-                               data-department="{{ other.profile.department }}">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="{{ other.profile.avatar.url|default:'/static/core/img/avatar-placeholder.png' }}" alt="Avatar" class="avatar">
-                                    <div class="flex-grow-1 overflow-hidden">
-                                        <div class="d-flex justify-content-between">
-                                            <h6 class="mb-0 fw-semibold">{{ other.get_full_name|default:other.username }}</h6>
-                                            {% if last %}<small class="chat-time">{{ last.created_at|time:"H:i" }}</small>{% endif %}
+                            {% with convo=item.conversation other=item.other last=item.last last_message_text=item.last_message_text %}
+                                <div class="chat-link-wrapper">
+                                    <a href="{% if other %}{% url 'messaging:conversation_view' pk=convo.pk %}{% else %}#{% endif %}"
+                                       class="list-group-item list-group-item-action p-3 chat-link"
+                                       data-name="{% if other %}{{ other.get_full_name|default:other.username|lower }}{% else %}deleted user{% endif %}"
+                                       data-usertype="{% if other %}{{ other.profile.user_type }}{% else %}none{% endif %}"
+                                       data-department="{% if other %}{{ other.profile.department }}{% else %}none{% endif %}">
+                                        <div class="d-flex align-items-center gap-3">
+                                            {% if other %}
+                                                <img src="{{ other.profile.avatar.url|default:'/static/core/img/avatar-placeholder.png' }}" alt="Avatar" class="avatar">
+                                            {% else %}
+                                                <div class="avatar bg-secondary d-flex align-items-center justify-content-center">
+                                                    <i class="fa-solid fa-user-slash text-white"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="d-flex justify-content-between">
+                                                    <h6 class="mb-0 fw-semibold">{% if other %}{{ other.get_full_name|default:other.username }}{% else %}Deleted User{% endif %}</h6>
+                                                    {% if last %}<small class="chat-time">{{ last.created_at|time:"H:i" }}</small>{% endif %}
+                                                </div>
+                                                <p class="last-message mb-0 {% if not other %}fst-italic{% endif %}">
+                                                    {{ last_message_text|truncatechars:25 }}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p class="last-message mb-0">
-                                            {% if last %}{% if last.sender == request.user %}You: {% endif %}{{ last.text }}{% else %}No messages yet{% endif %}
-                                        </p>
-                                    </div>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger delete-chat-btn"
+                                            data-leave-url="{% url 'messaging:leave_conversation_ajax' pk=convo.pk %}"
+                                            aria-label="Delete Chat">
+                                        <i class="fa-solid fa-times"></i>
+                                    </button>
                                 </div>
-                            </a>
                             {% endwith %}
                         {% empty %}
                             <div class="p-4 text-center text-muted">No conversations yet.</div>
@@ -156,7 +157,7 @@
                 <div class="chat-window-wrapper" id="chat-window-container">
                     <div class="d-flex align-items-center justify-content-center h-100">
                         <div class="text-center">
-                            <i class="fa-solid fa-comments mb-3" style="font-size: 4rem; color: #cbd5e1;"></i>
+                            <i class="fa-solid fa-comments mb-3" style="font-size: 4rem; color: rgba(59, 130, 246, 0.3);"></i>
                             <h5 class="fw-bold">Your conversations will appear here</h5>
                             <p class="text-muted">Select a chat from the list to get started.</p>
                         </div>
@@ -166,29 +167,55 @@
         </main>
     </div>
 
-    <!-- Responsive Sidebar Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const toggleButton = document.getElementById('sidebar-toggle-btn');
-            const overlay = document.getElementById('overlay');
-            const body = document.body;
-            if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
-            if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }
-        });
-    </script>
-    
-    <!-- FINAL, COMPLETE JavaScript for Dynamic Chat -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="deleteModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to remove this chat from your inbox? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete Chat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- 1. SETUP: All variables and constants ---
         const chatWindowContainer = document.getElementById('chat-window-container');
         const chatListContainer = document.getElementById('chat-list-container');
         const body = document.body;
         const csrftoken = getCookie("csrftoken");
-        let pollInterval = null;
-        let lastId = 0;
+
+        // ** NEW: Variable for the WebSocket connection **
+        let chatSocket = null;
+
+        // ** OLD polling variable `pollInterval` is removed. **
+        let lastId = 0; // Still useful for knowing the last loaded message ID.
         let selectionMode = false;
         let selectedMessages = new Set();
         let pressTimer = null;
+
+        const deleteModalElement = document.getElementById('deleteConfirmModal');
+        const deleteModal = new bootstrap.Modal(deleteModalElement);
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        const toggleButton = document.getElementById('sidebar-toggle-btn');
+        const overlay = document.getElementById('overlay');
+        const searchInput = document.getElementById('chat-search-input');
+        const userTypeFilter = document.getElementById('chat-usertype-filter');
+        const departmentFilter = document.getElementById('chat-department-filter');
+        
+        const originalConversations = Array.from(chatListContainer.querySelectorAll('.chat-link-wrapper'));
+
+        // --- 2. HELPER FUNCTIONS ---
 
         function getCookie(name) {
             let cookieValue = null;
@@ -209,16 +236,16 @@
             const chatEl = document.getElementById("chat");
             if (!chatEl) return;
             lastId = m.id;
-
             let fileHtml = '';
-            if (m.file_url) {
-                if (/\.(jpe?g|png|gif|webp)$/i.test(m.file_name)) {
-                    fileHtml = `<img src="${m.file_url}" class="img-fluid rounded my-2" style="max-height: 200px; cursor: pointer;" onclick="window.open('${m.file_url}', '_blank');">`;
-                } else {
-                    fileHtml = `<a href="${m.file_url}" target="_blank" class="d-flex align-items-center text-decoration-none text-inherit my-2 p-2 rounded" style="background-color: rgba(0,0,0,0.1);"><i class="fa-solid fa-file-arrow-down me-2"></i><span>${m.file_name}</span></a>`;
-                }
+            if (m.files && m.files.length > 0) {
+                m.files.forEach(file => {
+                    if (/\.(jpe?g|png|gif|webp)$/i.test(file.name)) {
+                        fileHtml += `<img src="${file.url}" class="img-fluid rounded my-2" style="max-height: 200px; cursor: pointer;" onclick="window.open('${file.url}', '_blank');">`;
+                    } else {
+                        fileHtml += `<a href="${file.url}" target="_blank" class="d-flex align-items-center text-decoration-none text-inherit my-2 p-2 rounded" style="background-color: rgba(0,0,0,0.1);"><i class="fa-solid fa-file-arrow-down me-2"></i><span>${file.name}</span></a>`;
+                    }
+                });
             }
-
             const textHtml = m.text ? m.text.replace(/\n/g, "<br>") : '';
             const wrapper = document.createElement("div");
             wrapper.className = `d-flex flex-column mb-3 msg-wrapper ${isMe ? "align-items-end" : "align-items-start"}`;
@@ -236,23 +263,44 @@
             wrapper.appendChild(bubble);
             wrapper.appendChild(meta);
             chatEl.appendChild(wrapper);
+            // Auto-scroll to the new message
+            chatEl.scrollTop = chatEl.scrollHeight;
         }
+        
+        // ** DELETED: The entire startPolling() function is gone. **
 
-        function startPolling(pollUrl) {
-            if (pollInterval) { clearInterval(pollInterval); }
-            pollInterval = setInterval(async () => {
-                if (selectionMode) return;
-                const urlWithQuery = pollUrl + "?after=" + (lastId || 0);
-                try {
-                    const res = await fetch(urlWithQuery);
-                    const data = await res.json();
-                    if (data.ok && data.messages.length) {
-                        data.messages.forEach(m => appendMessage(m, m.sender_id === {{ request.user.id }}));
-                        const chatEl = document.getElementById("chat");
-                        if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
-                    }
-                } catch (e) { /* ignore */ }
-            }, 3000);
+        // ** NEW: Function to manage the WebSocket connection **
+        function connectToWebSocket(conversationId) {
+            // Close any existing connection
+            if (chatSocket) {
+                chatSocket.close();
+            }
+
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const wsUrl = `${wsProtocol}://${window.location.host}/ws/chat/${conversationId}/`;
+            
+            chatSocket = new WebSocket(wsUrl);
+
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                
+                // Handle new messages pushed from the server
+                if (data.type === 'chat_message') {
+                    const messageData = data.message;
+                    appendMessage(messageData, messageData.sender_id === {{ request.user.id }});
+                }
+                
+                // You can add more handlers here for other real-time events
+                // e.g., if (data.type === 'user_status') { ... }
+            };
+
+            chatSocket.onclose = function(e) {
+                console.error('Chat socket closed unexpectedly');
+            };
+
+            chatSocket.onerror = function(err) {
+                console.error('WebSocket Error:', err);
+            };
         }
 
         function updateSelectionUI() {
@@ -302,75 +350,161 @@
             }
             updateSelectionUI();
         }
+        
+        function startPressTimer(event) {
+            const msgWrapper = event.target.closest('.msg-wrapper');
+            if (msgWrapper && msgWrapper.querySelector('.delete-msg-btn') && !selectionMode) {
+                pressTimer = window.setTimeout(() => enterSelectionMode(msgWrapper), 500);
+            }
+        }
 
+        function cancelPressTimer() { clearTimeout(pressTimer); }
+
+        function filterChats() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedUserType = userTypeFilter.value;
+            const selectedDepartment = departmentFilter.value;
+            let visibleCount = 0;
+            originalConversations.forEach(wrapper => {
+                const link = wrapper.querySelector('.chat-link');
+                if (!link) return;
+                const nameMatch = link.dataset.name.includes(searchTerm);
+                const userTypeMatch = (selectedUserType === 'all' || link.dataset.usertype === selectedUserType);
+                const departmentMatch = (selectedDepartment === 'all' || link.dataset.department === selectedDepartment);
+                if (nameMatch && userTypeMatch && departmentMatch) {
+                    wrapper.style.display = '';
+                    visibleCount++;
+                } else {
+                    wrapper.style.display = 'none';
+                }
+            });
+            let noResultsMsg = chatListContainer.querySelector('.no-results-message');
+            if (visibleCount === 0 && !noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'p-4 text-center text-muted no-results-message';
+                noResultsMsg.textContent = 'No conversations match your filters.';
+                chatListContainer.appendChild(noResultsMsg);
+            } else if (visibleCount > 0 && noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+
+        function createFloatingParticle() {
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return;
+            const particle = document.createElement('div');
+            particle.className = 'floating-particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 2 + 's';
+            particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+            const colors = ['rgba(59, 130, 246, 0.6)', 'rgba(96, 165, 250, 0.6)', 'rgba(147, 197, 253, 0.6)'];
+            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+            sidebar.appendChild(particle);
+            setTimeout(() => { particle.remove(); }, 6000);
+        }
+
+        // --- 3. EVENT LISTENERS ---
+
+        if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
+        if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }
+        
         chatListContainer.addEventListener('click', function(event) {
             const link = event.target.closest('.chat-link');
-            if (!link) return;
-            event.preventDefault();
+            const deleteBtn = event.target.closest('.delete-chat-btn');
 
-            exitSelectionMode();
-            const currentActive = chatListContainer.querySelector('.active');
-            if (currentActive) currentActive.classList.remove('active');
-            link.classList.add('active');
-
-            const fetchUrl = link.getAttribute('href').replace('/c/', '/fetch-html/');
-            chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><div class="spinner-border text-primary"></div></div>`;
-
-            fetch(fetchUrl)
-                .then(response => response.text())
-                .then(html => {
-                    chatWindowContainer.innerHTML = html;
-                    const chatEl = document.getElementById("chat");
-                    if (chatEl) {
-                        const items = chatEl.querySelectorAll("[data-msg-id]");
-                        lastId = items.length ? parseInt(items[items.length - 1].dataset.msgId || "0") : 0;
-                        chatEl.scrollTop = chatEl.scrollHeight;
-                        startPolling(chatEl.dataset.pollUrl);
-                    }
-                    body.classList.add('mobile-chat-visible');
-                })
-                .catch(error => {
-                    console.error('Error fetching conversation:', error);
-                    chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><p class="text-danger">Could not load conversation.</p></div>`;
-                });
+            if (deleteBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                const leaveUrl = deleteBtn.dataset.leaveUrl;
+                const wrapperToDelete = deleteBtn.closest('.chat-link-wrapper');
+                confirmDeleteBtn.dataset.leaveUrl = leaveUrl;
+                const tempId = `deletable-${Date.now()}`;
+                wrapperToDelete.id = tempId;
+                confirmDeleteBtn.dataset.targetId = tempId;
+                deleteModal.show();
+            } else if (link) {
+                event.preventDefault();
+                exitSelectionMode();
+                const currentActive = chatListContainer.querySelector('.active');
+                if (currentActive) currentActive.classList.remove('active');
+                link.classList.add('active');
+                
+                // ** UPDATED: URL to fetch the chat window HTML **
+                const fetchUrl = link.getAttribute('href').replace('/conversation/', '/fetch-html/');
+                
+                chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><div class="spinner-border text-primary"></div></div>`;
+                
+                fetch(fetchUrl)
+                    .then(response => response.text())
+                    .then(html => {
+                        chatWindowContainer.innerHTML = html;
+                        const chatEl = document.getElementById("chat");
+                        if (chatEl) {
+                            // Scroll to the bottom of the loaded chat
+                            chatEl.scrollTop = chatEl.scrollHeight;
+                            
+                            // ** REPLACED: Connect to WebSocket instead of polling **
+                            const conversationId = document.getElementById('send-form').dataset.pk;
+                            if (conversationId) {
+                                connectToWebSocket(conversationId);
+                            }
+                        }
+                        body.classList.add('mobile-chat-visible');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching conversation:', error);
+                        chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><p class="text-danger">Could not load conversation.</p></div>`;
+                    });
+            }
         });
-        
+
+        confirmDeleteBtn.addEventListener('click', async function() {
+            const leaveUrl = this.dataset.leaveUrl;
+            const targetId = this.dataset.targetId;
+            if (!leaveUrl || !targetId) return;
+            try {
+                const res = await fetch(leaveUrl, { method: 'POST', headers: { 'X-CSRFToken': csrftoken } });
+                const data = await res.json();
+                if (data.ok) {
+                    document.getElementById(targetId)?.remove();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('An error occurred.');
+            } finally {
+                deleteModal.hide();
+                delete this.dataset.leaveUrl;
+                delete this.dataset.targetId;
+            }
+        });
+
+        chatWindowContainer.addEventListener('pointerdown', startPressTimer);
+        chatWindowContainer.addEventListener('pointerup', cancelPressTimer);
+        chatWindowContainer.addEventListener('pointerleave', cancelPressTimer);
+        chatWindowContainer.addEventListener('touchcancel', cancelPressTimer);
+
         chatWindowContainer.addEventListener('click', async function(event) {
             if (event.target.closest('#back-to-chats-btn')) { body.classList.remove('mobile-chat-visible'); exitSelectionMode(); }
             if (event.target.closest('#cancel-selection-btn')) { exitSelectionMode(); }
             if (event.target.closest('#file-preview-clear')) {
                 const form = document.getElementById('send-form');
                 if (form) {
-                    const fileInput = form.querySelector('[name="file"]');
-                    fileInput.value = '';
+                    const fileInput = form.querySelector('#file-upload-input');
+                    if(fileInput) fileInput.value = '';
                     document.getElementById('file-preview-container').classList.add('d-none');
                 }
             }
-
             const msgWrapper = event.target.closest('.msg-wrapper.can-select');
             if (selectionMode && msgWrapper) {
                 toggleMessageSelection(msgWrapper);
                 return;
             }
-            
-            const deleteBtn = event.target.closest('.delete-msg-btn');
-            if (deleteBtn && !selectionMode) {
-                if (!confirm('Are you sure you want to delete this message?')) return;
-                const deleteUrl = deleteBtn.dataset.deleteUrl;
-                try {
-                    const res = await fetch(deleteUrl, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }});
-                    const data = await res.json();
-                    if (data.ok) {
-                        deleteBtn.closest('.msg-wrapper').remove();
-                    } else { alert('Error: ' + data.error); }
-                } catch (err) { alert('An error occurred.'); }
-            }
-
             const deleteSelectedBtn = event.target.closest('#delete-selected-btn');
             if (deleteSelectedBtn && selectedMessages.size > 0) {
                 if (!confirm(`Are you sure you want to delete ${selectedMessages.size} messages?`)) return;
                 try {
-                    const res = await fetch("{% url 'messaging:delete_messages_bulk' %}", {
+                    const res = await fetch("{% url 'messaging:delete_messages_bulk_ajax' %}", {
                         method: 'POST',
                         headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' },
                         body: JSON.stringify({ ids: Array.from(selectedMessages) })
@@ -383,27 +517,10 @@
                 } catch (err) { alert('An error occurred.'); }
             }
         });
-
-        chatWindowContainer.addEventListener('mousedown', (e) => {
-            const msgWrapper = e.target.closest('.msg-wrapper');
-            if (msgWrapper && msgWrapper.querySelector('.delete-msg-btn') && !selectionMode) {
-                pressTimer = window.setTimeout(() => enterSelectionMode(msgWrapper), 500);
-            }
-        });
-        chatWindowContainer.addEventListener('mouseup', () => clearTimeout(pressTimer));
-        chatWindowContainer.addEventListener('mouseleave', () => clearTimeout(pressTimer));
-        chatWindowContainer.addEventListener('touchstart', (e) => {
-             const msgWrapper = e.target.closest('.msg-wrapper');
-            if (msgWrapper && msgWrapper.querySelector('.delete-msg-btn') && !selectionMode) {
-                pressTimer = window.setTimeout(() => enterSelectionMode(msgWrapper), 500);
-            }
-        }, {passive: true});
-        chatWindowContainer.addEventListener('touchend', () => clearTimeout(pressTimer));
-        chatWindowContainer.addEventListener('touchcancel', () => clearTimeout(pressTimer));
-
+        
         chatWindowContainer.addEventListener('change', function(event) {
             const fileInput = event.target;
-            if (fileInput.matches('[name="file"]')) {
+            if (fileInput.matches('#file-upload-input')) {
                 const previewContainer = document.getElementById('file-preview-container');
                 const previewName = document.getElementById('file-preview-name');
                 const files = fileInput.files;
@@ -422,51 +539,54 @@
             
             const formEl = event.target;
             const formData = new FormData(formEl);
-            if (!formData.get('text').trim() && !formData.get('file').name) return;
+            
+            if (!formData.get('text').trim() && (!formData.get('file') || !formData.get('file').name)) {
+                return;
+            }
 
             const sendUrl = formEl.dataset.sendUrl;
             try {
-                const res = await fetch(sendUrl, {
+                const response = await fetch(sendUrl, {
                     method: "POST",
-                    headers: { "X-CSRFToken": csrftoken },
+                    headers: { "X-CSRFToken": csrftoken, "Accept": "application/json" },
                     body: formData
                 });
-                const data = await res.json();
-                if (data.ok) {
-                    data.messages.forEach(msg => { appendMessage(msg, msg.sender_id === {{ request.user.id }}); });
+                const data = await response.json();
+                
+                if (response.ok && data.ok) {
                     formEl.reset();
                     document.getElementById('file-preview-container').classList.add('d-none');
-                    const chatEl = document.getElementById("chat");
-                    if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
                 } else {
-                    alert("Error sending message: " + data.error);
+                    alert("Error: " + (data.error || "An unknown error occurred."));
                 }
-            } catch (err) {
-                console.error("Error sending message:", err);
-                alert("An error occurred while sending the message.");
+            } catch (error) {
+                console.error("Failed to send message:", error);
+                alert("A connection error occurred while sending the message.");
             }
         });
 
-        // --- Auto-open chat from URL parameter ---
+        // --- 4. INITIALIZATION LOGIC ---
+        
+        setInterval(createFloatingParticle, 1500);
+        for(let i = 0; i < 5; i++) { setTimeout(createFloatingParticle, i * 300); }
+
         const urlParams = new URLSearchParams(window.location.search);
         const openChatId = urlParams.get('open_chat');
         if (openChatId) {
-            const chatLinkToOpen = document.querySelector(`a.chat-link[href='/messages/c/${openChatId}/']`);
+            const chatLinkToOpen = document.querySelector(`a.chat-link[href*='/conversation/${openChatId}/']`);
             if (chatLinkToOpen) {
-                chatLinkToOpen.click();
+                setTimeout(() => { chatLinkToOpen.click(); }, 100);
             }
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
-        // --- Chat Search/Filter Script ---
-        const searchInput = document.getElementById('chat-search-input');
-        const userTypeFilter = document.getElementById('chat-usertype-filter');
-        const departmentFilter = document.getElementById('chat-department-filter');
-        const originalConversations = Array.from(chatListContainer.querySelectorAll('.chat-link'));
         const departments = new Set();
-        originalConversations.forEach(convo => {
-            const dept = convo.dataset.department;
-            if (dept) departments.add(dept);
+        originalConversations.forEach(wrapper => {
+            const link = wrapper.querySelector('.chat-link');
+            if(link) {
+                const dept = link.dataset.department;
+                if (dept && dept !== 'none') departments.add(dept);
+            }
         });
         departments.forEach(dept => {
             const option = document.createElement('option');
@@ -475,39 +595,9 @@
             departmentFilter.appendChild(option);
         });
 
-        function filterChats() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedUserType = userTypeFilter.value;
-            const selectedDepartment = departmentFilter.value;
-            let visibleCount = 0;
-
-            originalConversations.forEach(convo => {
-                const nameMatch = convo.dataset.name.includes(searchTerm);
-                const userTypeMatch = (selectedUserType === 'all' || convo.dataset.usertype === selectedUserType);
-                const departmentMatch = (selectedDepartment === 'all' || convo.dataset.department === selectedDepartment);
-
-                if (nameMatch && userTypeMatch && departmentMatch) {
-                    convo.style.display = '';
-                    visibleCount++;
-                } else {
-                    convo.style.display = 'none';
-                }
-            });
-
-            let noResultsMsg = chatListContainer.querySelector('.no-results-message');
-            if (visibleCount === 0 && !noResultsMsg) {
-                noResultsMsg = document.createElement('div');
-                noResultsMsg.className = 'p-4 text-center text-muted no-results-message';
-                noResultsMsg.textContent = 'No conversations match your filters.';
-                chatListContainer.appendChild(noResultsMsg);
-            } else if (visibleCount > 0 && noResultsMsg) {
-                noResultsMsg.remove();
-            }
-        }
         searchInput.addEventListener('input', filterChats);
         userTypeFilter.addEventListener('change', filterChats);
         departmentFilter.addEventListener('change', filterChats);
-
     });
     </script>
 </body>

@@ -1,4 +1,7 @@
 import json
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -7,9 +10,9 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib import messages as flash_messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.urls import reverse
 
-from .models import Conversation, ConversationParticipant, Message
+
+from .models import Conversation, ConversationParticipant, Message, MessageFile, ReadReceipt
 from core.models import Connection, Profile
 
 User = get_user_model()
@@ -30,17 +33,14 @@ def _get_or_create_1to1_conversation(user1, user2):
     Finds or creates a 1-on-1 conversation using a unique, sorted key.
     This is atomic and prevents race conditions.
     """
-    # Ensure IDs are always in the same order (lower first)
     low_id, high_id = min(user1.id, user2.id), max(user1.id, user2.id)
     key = f"{low_id}-{high_id}"
 
-    # Use get_or_create for an atomic database operation
+    # THE FIX: The 'defaults' dictionary is now empty because 'is_group' was removed.
     conversation, created = Conversation.objects.get_or_create(
-        unique_key=key,
-        defaults={'is_group': False}
+        unique_key=key
     )
 
-    # If a new conversation was created, we must add the participants
     if created:
         ConversationParticipant.objects.create(conversation=conversation, user=user1)
         ConversationParticipant.objects.create(conversation=conversation, user=user2)
@@ -58,9 +58,8 @@ def inbox(request):
     filter_type = request.GET.get('filter')
     
     # Start with all of the user's conversations
-    convs = request.user.conversations.all().order_by("-updated_at")
+    convs = request.user.conversations.all().exclude(deleted_by=request.user).order_by("-updated_at")
 
-    # If the filter is 'students', modify the query
     if filter_type == 'students':
         convs = convs.filter(memberships__user__profile__user_type='student')
 
@@ -68,16 +67,20 @@ def inbox(request):
     for c in convs:
         other = c.participants.exclude(pk=request.user.pk).first()
         last = c.last_message()
-        conv_list.append({"conversation": c, "other": other, "last": last})
+        last_message_text = "No messages yet"
+        if last:
+            sender_prefix = "You: " if last.sender == request.user else ""
+            last_message_text = f"{sender_prefix}{last.text}"
+
+        conv_list.append({
+            "conversation": c, 
+            "other": other, 
+            "last": last,
+            "last_message_text": last_message_text # Pass this new text to the template
+        })
     
     profile = get_object_or_404(Profile, user=request.user)
-    
-    # --- UPDATED CONTEXT ---
-    context = {
-        "conversations": conv_list,
-        "profile": profile,
-        "active_filter": filter_type # Pass the filter to the template
-    }
+    context = { "conversations": conv_list, "profile": profile, "active_filter": filter_type }
     return render(request, "messaging/inbox.html", context)
 
 
@@ -103,7 +106,12 @@ def chat_with_user(request, user_id):
     
     convo = _get_or_create_1to1_conversation(request.user, other)
     
-    # --- THE FIX: Redirect to the inbox with a parameter ---
+    # --- THIS IS THE FIX ---
+    # "Resurrect" the chat if the current user had previously deleted it.
+    if request.user in convo.deleted_by.all():
+        convo.deleted_by.remove(request.user)
+    # --- End of the fix ---
+
     inbox_url = reverse('messaging:inbox')
     return redirect(f'{inbox_url}?open_chat={convo.pk}')
 
@@ -141,68 +149,88 @@ def conversation_view(request, pk):
 @require_POST
 @login_required
 def send_message_ajax(request, pk):
-    """AJAX endpoint: create new messages (text and/or multiple files)."""
+    """
+    Saves a single message with text and/or multiple files,
+    then broadcasts it via the WebSocket consumer.
+    """
     convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
     text = (request.POST.get("text") or "").strip()
-    
-    # THE FIX: Use getlist() to handle multiple files
     files = request.FILES.getlist('file')
 
     if not text and not files:
-        return JsonResponse({"ok": False, "error": "empty"})
+        return JsonResponse({"ok": False, "error": "Message cannot be empty"}, status=400)
 
-    created_messages = []
-
-    # Create a message for the text part if it exists
-    if text:
-        msg = Message.objects.create(conversation=convo, sender=request.user, text=text)
-        created_messages.append(msg)
-
-    # Create a separate message for each uploaded file
-    for f in files:
-        msg = Message.objects.create(conversation=convo, sender=request.user, file=f)
-        created_messages.append(msg)
+    # --- THIS IS THE FIX ---
+    # 1. Create a single message that can contain the text.
+    msg = Message.objects.create(conversation=convo, sender=request.user, text=text)
     
-    convo.save()  # update updated_at
+    # 2. Create MessageFile objects for each uploaded file and link them to the *same* message.
+    file_data_list = []
+    for f in files:
+        message_file = MessageFile.objects.create(file=f)
+        msg.files.add(message_file)
+        file_data_list.append({
+            'url': message_file.file.url,
+            'name': str(message_file.file.name).split('/')[-1]
+        })
+    
+    # 3. Update the conversation's timestamp.
+    convo.save() 
+    # --- End of the fix ---
 
-    # THE FIX: Return a list of all created messages
-    response_data = {
-        "ok": True,
-        "messages": [
-            {
-                "id": m.id,
-                "text": m.text,
-                "sender_id": m.sender_id,
-                "sender_username": m.sender.username,
-                "created": m.created_at.strftime("%H:%M"),
-                "file_url": m.file.url if m.file else None,
-                "file_name": str(m.file).split('/')[-1] if m.file else None,
+    # Broadcast the single new message via Channels
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'chat_{pk}', 
+        {
+            'type': 'chat_message', 
+            'message': { 
+                "id": msg.id,
+                "sender_id": msg.sender.id,
+                "sender_username": msg.sender.username,
+                "text": msg.text,
+                "created": msg.created_at.strftime("%H:%M"),
+                "files": file_data_list, # Pass the list of files
             }
-            for m in created_messages
-        ]
-    }
-    return JsonResponse(response_data)
-
+        }
+    )
+    
+    return JsonResponse({"ok": True})
 
 @login_required
 def fetch_messages(request, pk):
     """
-    AJAX endpoint: fetch messages after the given id (GET ?after=123)
-    Returns JSON list of new messages.
+    AJAX endpoint: fetch messages after a given id, ensuring the JSON
+    response format is IDENTICAL to the WebSocket broadcast structure.
     """
     convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
     after = int(request.GET.get("after", 0))
-    new = convo.messages.select_related("sender").filter(id__gt=after)
-    data = [
-        {
+    
+    # Use prefetch_related for efficiency
+    new_messages = convo.messages.select_related("sender").prefetch_related('files').filter(id__gt=after)
+    
+    # --- THIS IS THE FIX ---
+    # We now build the exact same data structure as the send_message_ajax view.
+    data = []
+    for m in new_messages:
+        # Create a list of file data for each message
+        file_data_list = []
+        for f in m.files.all():
+            file_data_list.append({
+                'url': f.file.url,
+                'name': str(f.file.name).split('/')[-1]
+            })
+
+        # Append the message with the 'files' array, just like the WebSocket consumer expects
+        data.append({
             "id": m.id,
             "text": m.text,
             "sender_id": m.sender_id,
             "sender_username": m.sender.username,
             "created": m.created_at.strftime("%H:%M"),
-        }
-        for m in new
-    ]
+            "files": file_data_list, # <-- This now matches the WebSocket structure
+        })
+
     return JsonResponse({"ok": True, "messages": data})
 
 @login_required
@@ -212,12 +240,11 @@ def fetch_conversation_html(request, pk):
     """
     convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
     
-    # This logic is the same as your original conversation_view
-    participant = ConversationParticipant.objects.get(conversation=convo, user=request.user)
-    participant.last_read_at = timezone.now()
-    participant.save(update_fields=['last_read_at'])
-
-    messages_qs = convo.messages.select_related("sender").all()
+    # --- THIS IS THE FIX ---
+    # We have removed the old, incorrect code that was trying to save to 'last_read_at'.
+    # The new read receipt logic will be handled by the ReadReceipt model when we implement it.
+    
+    messages_qs = convo.messages.select_related("sender").prefetch_related('files').all()
     other = convo.participants.exclude(pk=request.user.pk).first()
     
     context = {
@@ -225,8 +252,30 @@ def fetch_conversation_html(request, pk):
         "messages": messages_qs,
         "other_user": other,
     }
-    # The only difference is we render the PARTIAL template
     return render(request, "messaging/_chat_window.html", context)
+
+@require_POST
+@login_required
+def leave_conversation_ajax(request, pk):
+    """
+    Adds the current user to the 'deleted_by' list for a conversation.
+    If both participants have deleted it, the conversation is permanently deleted.
+    """
+    try:
+        convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
+        
+        # Add the current user to the list of users who have deleted this chat
+        convo.deleted_by.add(request.user)
+        
+        # --- NEW LOGIC: Check if it should be permanently deleted ---
+        if convo.deleted_by.count() >= convo.participants.count():
+            # If everyone has "deleted" the chat, remove it for real
+            convo.delete()
+        
+        return JsonResponse({"ok": True})
+
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
 @require_POST
 @login_required

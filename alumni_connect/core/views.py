@@ -111,39 +111,33 @@ def student_dashboard_view(request):
         profile.has_seen_verification_message = True
         profile.save(update_fields=['has_seen_verification_message'])
 
-    # --- Initialize all the data we need ---
     suggested_alumni = []
     recent_alumni = []
     connection_count = 0
 
     if profile.is_verified:
-        # 1. Get alumni from the student's own department (your original logic)
-        suggested_alumni = Profile.objects.filter(
-            user_type='alumni', 
-            is_verified=True, 
-            department=profile.department
-        ).exclude(user=request.user)
+        # --- THIS IS THE FIX: Call the AI recommender ---
+        # We also limit the results to the top 5 for the dashboard
+        suggested_alumni = get_recommendations(profile)[:5]
 
-        # --- THIS IS THE NEW LOGIC TO ADD ---
-        # 2. Get the 5 most recently joined alumni from ANY department
+        # Get the 5 most recently joined alumni (your existing correct logic)
         recent_alumni = Profile.objects.filter(
             user_type='alumni', 
             is_verified=True
         ).exclude(user=request.user).order_by('-user__date_joined')[:5]
-        # --- End of new logic ---
-
-        # 3. Get the student's connection count (your original logic)
+        
+        # Get the student's connection count (your existing correct logic)
         connection_count = Connection.objects.filter(
             (Q(sender=request.user) | Q(receiver=request.user)),
             status=Connection.Status.ACCEPTED
         ).count()
 
-    # --- THIS IS THE UPDATED CONTEXT ---
+    # The context remains the same, but 'suggested_alumni' now has the correct data structure
     context = {
         'profile': profile,
         'alumni_count': Profile.objects.filter(user_type='alumni', is_verified=True).count(),
         'suggested_alumni': suggested_alumni,
-        'recent_alumni': recent_alumni, # <-- Pass the new list to the template
+        'recent_alumni': recent_alumni,
         'connection_count': connection_count,
     }
     return render(request, 'core/student_dashboard.html', context)

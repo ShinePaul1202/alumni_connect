@@ -23,6 +23,7 @@ class Profile(models.Model):
     graduation_year = models.PositiveIntegerField(null=True, blank=True)
     is_verified = models.BooleanField(default=False)
     has_seen_verification_message = models.BooleanField(default=False)
+    last_seen = models.DateTimeField(auto_now=True)
 
     # This field will store any warnings issued by an admin.
     fraud_warning = models.TextField(blank=True, null=True)
