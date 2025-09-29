@@ -16,31 +16,66 @@
 
     <!-- This CSS is a direct copy of your polished alumni_dashboard.html for consistency -->
     <style>
-        :root { --primary-color: #3b82f6; --sidebar-width: 260px; }
-        body { font-family: 'Poppins', sans-serif; margin: 0; overflow-x: hidden; min-height: 100vh; }
-        .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar { width: var(--sidebar-width); background: linear-gradient(-45deg, #1d2b64, #485563, #2b5876, #4e4376); background-size: 400% 400%; animation: gradientAnimation 15s ease infinite; background-attachment: fixed; padding: 1.5rem; display: flex; flex-direction: column; color: white; flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease-in-out; position: relative; overflow: hidden; }
+        :root {
+            --primary-color: #3b82f6;
+            --sidebar-width: 260px;
+        }
+
+        /* --- SCROLLING & LAYOUT (Consistent with other pages) --- */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            overflow-y: hidden;
+        }
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR STYLING (Consistent with other pages) --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(-45deg, #1d2b64, #485563, #2b5876, #4e4376);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            color: white;
+            flex-shrink: 0;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            position: relative;
+            overflow: hidden;
+        }
         @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* --- MAIN CONTENT STYLING (Consistent with other pages) --- */
+        .main-content {
+            flex-grow: 1;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 2.5rem;
+            width: calc(100% - var(--sidebar-width));
+            position: relative;
+            overflow-y: auto;
+        }
+        
+        /* All other aesthetic styles (cards, headers, etc.) */
         .floating-particle { position: absolute; width: 4px; height: 4px; background: rgba(59, 130, 246, 0.6); border-radius: 50%; pointer-events: none; animation: floatUp 6s ease-out infinite; }
         @keyframes floatUp { 0% { opacity: 0; transform: translateY(100px) scale(0); } 10% { opacity: 1; transform: translateY(80px) scale(1); } 50% { opacity: 0.8; transform: translateY(-20px) scale(1.2); } 100% { opacity: 0; transform: translateY(-120px) scale(0.5); } }
-        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; position: relative; z-index: 10; }
+        .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
         .brand-logo svg { animation: brandGlow 3s ease-in-out infinite; }
         @keyframes brandGlow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3)); } 50% { transform: scale(1.01); filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.5)); } }
         .sidebar-nav { position: relative; z-index: 10; }
         .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.75rem; border-radius: 1rem; color: rgba(255, 255, 255, 0.9); text-decoration: none; transition: all 0.3s ease; position: relative; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-        .sidebar-nav .nav-item::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%); border-radius: 1rem; opacity: 0; transition: opacity 0.3s ease; }
         .sidebar-nav .nav-item:not(.active):hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px) translateX(5px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); border-color: rgba(255, 255, 255, 0.2); }
-        .sidebar-nav .nav-item:not(.active):hover::before { opacity: 1; }
         .sidebar-nav .nav-item.active { background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff; font-weight: 500; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4); transform: translateY(-3px); }
-        .sidebar-nav .nav-item.active::before { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%); opacity: 1; }
         .sidebar-nav .nav-item i { width: 20px; text-align: center; }
-        .sidebar-nav .nav-item.disabled { color: rgba(255, 255, 255, 0.4); pointer-events: none; cursor: not-allowed; background-color: transparent; }
-        .sidebar-nav .nav-item.disabled:hover { transform: none; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-        .main-content { flex-grow: 1; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 25%, #90caf9 50%, #64b5f6 75%, #42a5f5 100%); background-size: 300% 300%; animation: mainContentGradient 25s ease infinite; padding: 2.5rem; width: calc(100% - var(--sidebar-width)); position: relative; }
-        @keyframes mainContentGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .main-content::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(248, 250, 252, 0.75) 50%, rgba(241, 245, 249, 0.85) 100%); z-index: 1; }
-        .main-content > * { position: relative; z-index: 2; }
-        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
+        .sidebar-nav .nav-item.disabled { color: rgba(255, 255, 255, 0.4); pointer-events: none; }
+        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); position: relative; z-index: 100; }
         .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; color: #1e293b; }
         .header-title .main-subtitle { color: #64748b; margin: 0; font-size: 0.9rem; }
         .profile-dropdown { position: relative; }
@@ -50,11 +85,12 @@
         .profile-dropdown:hover .profile-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
         .profile-dropdown-menu a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: #1e293b; text-decoration: none; font-size: 0.95rem; transition: background-color 0.2s ease; }
         .profile-dropdown-menu a:hover { background: rgba(59, 130, 246, 0.1); }
-        .alert { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 1rem; color: #1e293b; }
-        .dashboard-section { margin-top: 2rem; }
+        .card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 1.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); }
+        .sidebar-toggle { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); color: #1e293b; border-radius: 0.75rem; padding: 0.5rem 0.75rem; transition: all 0.2s ease; }
+        .sidebar-toggle:hover { background: rgba(255, 255, 255, 0.4); transform: scale(1.05); }
+        .dashboard-section { margin-bottom: 2.5rem; }
         .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: #1e293b; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 1.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
-        .stat-card-link .card:hover, .alumni-list-container.card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); }
         .stat-card .card-icon { font-size: 1.75rem; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff; }
         .alumni-icon { background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
         .connections-icon { background: linear-gradient(135deg, #3b82f6, #60a5fa); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); }
@@ -65,32 +101,39 @@
         .alumni-list-item:hover { background: rgba(59, 130, 246, 0.05); }
         .alumni-list-item:last-child { border-bottom: none; }
         .alumni-card-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(59, 130, 246, 0.2); }
-        
-        @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.3s ease-in-out; } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1.5rem; } .header-title { display: none; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } }
+        #outer-circle-nav { animation: rotate-clockwise 20s linear infinite; }
+        #inner-circle-nav { animation: rotate-counter-clockwise 15s linear infinite; }
+        #needle-nav { animation: pulse 2s ease-in-out infinite; }
+        @keyframes rotate-clockwise { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotate-counter-clockwise { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+        @keyframes pulse { 50% { filter: drop-shadow(0 0 8px #0D6EFD); } }
+        @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1.5rem; } .header-title { display: none; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
         <div class="overlay" id="overlay"></div>
         <aside class="sidebar" id="sidebar">
-            <!-- Particles will be injected by JS -->
             <a href="{% url 'core:home' %}" class="brand-logo">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g style="transform-origin: center; animation: rotate-clockwise 20s linear infinite;"><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g>
-                    <g style="transform-origin: center; animation: rotate-counter-clockwise 15s linear infinite;"><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g>
-                    <g style="animation: pulse 2s ease-in-out infinite;"><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                    <g id="outer-circle-nav" style="transform-origin: center;"><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g>
+                    <g id="inner-circle-nav" style="transform-origin: center;"><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g>
+                    <g id="needle-nav"><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
                 </svg>
                 <span>AluLink</span>
             </a>
             <nav class="sidebar-nav mt-3">
-                {% if profile.user_type == 'student' %}<a href="{% url 'core:student_dashboard' %}" class="nav-item active"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% else %}<a href="{% url 'core:alumni_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% endif %}
+                <a href="{% url 'core:student_dashboard' %}" class="nav-item active"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>
                 {% if profile.is_verified and not profile.fraud_warning %}
                     <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
                     <a href="{% url 'messaging:inbox' %}" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>{% if unread_message_count > 0 %}<span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>{% endif %}</a>
                     <a href="{% url 'core:connection_requests' %}" class="nav-item"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>{% if pending_request_count > 0 %}<span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>{% endif %}</a>
                     <a href="{% url 'core:notification_list' %}" class="nav-item"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>{% if unread_notification_count > 0 %}<span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>{% endif %}</a>
                 {% else %}
-                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a><a href="#" class="nav-item disabled"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a><a href="#" class="nav-item disabled"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a><a href="#" class="nav-item disabled"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
                 {% endif %}
                 <a href="{% url 'core:account_settings' %}" class="nav-item"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
             </nav>
@@ -101,47 +144,17 @@
                 <div class="profile-dropdown"><div class="profile-dropdown-btn"><img src="{{ profile.avatar.url }}" alt="Profile"></div><div class="profile-dropdown-menu"><a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a><a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i>Settings</a><hr class="my-1"><a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a></div></div>
             </header>
 
-            {% if profile.fraud_warning %}
-            <div class="alert alert-danger mb-4" role="alert"><h4 class="alert-heading fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Account Warning</h4><p>{{ profile.fraud_warning }}</p></div>
-            {% elif not profile.is_verified %}
-            <div class="alert alert-info mb-4" role="alert"><h4 class="alert-heading fw-bold"><i class="fa-solid fa-hourglass-half me-2"></i>Verification Pending</h4><p class="mb-0">Your account is awaiting verification. Core features will be unlocked once approved.</p></div>
-            {% endif %}
+            {% if profile.fraud_warning %}<div class="alert alert-danger mb-4" role="alert"><h4 class="alert-heading fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Account Warning</h4><p>{{ profile.fraud_warning }}</p></div>{% elif not profile.is_verified %}<div class="alert alert-info mb-4" role="alert"><h4 class="alert-heading fw-bold"><i class="fa-solid fa-hourglass-half me-2"></i>Verification Pending</h4><p class="mb-0">Your account is awaiting verification. Core features will be unlocked once approved.</p></div>{% endif %}
 
             <section class="dashboard-section">
                 <h2 class="section-title">Overview</h2>
                 <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="card stat-card p-4 h-100">
-                            <div class="d-flex align-items-center gap-4">
-                                <div class="card-icon alumni-icon"><i class="fa-solid fa-user-check"></i></div>
-                                <div>
-                                    <h3>{{ alumni_count }}</h3>
-                                    <p class="mb-0 text-muted">Verified Alumni</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="col-md-4"><div class="card stat-card p-4 h-100"><div class="d-flex align-items-center gap-4"><div class="card-icon alumni-icon"><i class="fa-solid fa-user-check"></i></div><div><h3>{{ alumni_count }}</h3><p class="mb-0 text-muted">Verified Alumni</p></div></div></div></div>
                     <a href="{% url 'core:connection_list' %}" class="col-md-4 text-decoration-none stat-card-link">
-                        <div class="card stat-card p-4 h-100">
-                            <div class="d-flex align-items-center gap-4">
-                                <div class="card-icon connections-icon"><i class="fa-solid fa-handshake"></i></div>
-                                <div>
-                                    <h3>{{ connection_count }}</h3>
-                                    <p class="mb-0 text-muted">Your Connections</p>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="card stat-card p-4 h-100"><div class="d-flex align-items-center gap-4"><div class="card-icon connections-icon"><i class="fa-solid fa-handshake"></i></div><div><h3>{{ connection_count }}</h3><p class="mb-0 text-muted">Your Connections</p></div></div></div>
                     </a>
                     <a href="{% url 'messaging:inbox' %}" class="col-md-4 text-decoration-none stat-card-link">
-                        <div class="card stat-card p-4 h-100">
-                            <div class="d-flex align-items-center gap-4">
-                                <div class="card-icon messages-icon"><i class="fa-solid fa-paper-plane"></i></div>
-                                <div>
-                                    <h3>0</h3> 
-                                    <p class="mb-0 text-muted">Your Messages</p>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="card stat-card p-4 h-100"><div class="d-flex align-items-center gap-4"><div class="card-icon messages-icon"><i class="fa-solid fa-paper-plane"></i></div><div><h3>{{ unread_message_count|default:0 }}</h3><p class="mb-0 text-muted">Your Messages</p></div></div></div>
                     </a>
                 </div>
             </section>
@@ -149,11 +162,11 @@
             <section class="dashboard-section">
                 <h2 class="section-title">Recommended Alumni For You</h2>
                 {% if profile.is_verified %}
-                    <div class="card alumni-list-container">
+                    <div class="card alumni-list-container p-3">
                         <div class="list-group list-group-flush">
                             {% for recommendation in suggested_alumni %}
                                 {% with alumni_profile=recommendation.profile %}
-                                <a href="{% url 'core:profile_page' user_id=alumni_profile.user.id %}" class="list-group-item list-group-item-action alumni-list-item p-4">
+                                <a href="{% url 'core:profile_page' user_id=alumni_profile.user.id %}" class="list-group-item list-group-item-action alumni-list-item px-3 py-4">
                                     <div class="d-flex align-items-center gap-3">
                                         <img class="alumni-card-img" src="{{ alumni_profile.avatar.url }}" alt="{{ alumni_profile.full_name }}">
                                         <div class="flex-grow-1">
@@ -165,7 +178,7 @@
                                 </a>
                                 {% endwith %}
                             {% empty %}
-                                <div class="card-body text-center py-5"><i class="fa-solid fa-users-slash mb-3" style="font-size: 3rem; color: #cbd5e1;"></i><p class="mb-0 text-muted fw-500">No alumni recommendations yet. Try adding a bio to your profile!</p></div>
+                                <div class="card-body text-center py-5"><i class="fa-solid fa-robot mb-3" style="font-size: 3rem; color: #cbd5e1;"></i><p class="mb-0 text-muted fw-500">No alumni recommendations yet. Try adding a bio to your profile!</p></div>
                             {% endfor %}
                         </div>
                     </div>
@@ -177,10 +190,10 @@
             <section class="dashboard-section">
                 <h2 class="section-title">Recently Joined Alumni</h2>
                 {% if profile.is_verified %}
-                    <div class="card alumni-list-container">
+                    <div class="card alumni-list-container p-3">
                         <div class="list-group list-group-flush">
                             {% for alumni_profile in recent_alumni %}
-                                <a href="{% url 'core:profile_page' user_id=alumni_profile.user.id %}" class="list-group-item list-group-item-action alumni-list-item p-4">
+                                <a href="{% url 'core:profile_page' user_id=alumni_profile.user.id %}" class="list-group-item list-group-item-action alumni-list-item px-3 py-4">
                                     <div class="d-flex align-items-center gap-3">
                                         <img class="alumni-card-img" src="{{ alumni_profile.avatar.url }}" alt="{{ alumni_profile.full_name }}">
                                         <div class="flex-grow-1">

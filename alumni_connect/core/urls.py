@@ -31,6 +31,7 @@ urlpatterns = [
     path('connect/respond/<int:request_id>/<str:action>/', views.respond_to_connection_request, name='respond_to_connection_request'),
     
     path('notifications/', views.notification_list_view, name='notification_list'),
+    path('notifications/delete/<int:notification_id>/', views.delete_notification, name='delete_notification'),
     
     path('connections/', views.connection_list_view, name='connection_list'),
     

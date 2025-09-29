@@ -119,6 +119,7 @@ class Notification(models.Model):
 class SearchHistory(models.Model):
     """Stores a record of a user's search queries on the find_alumni page."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_history')
+    name = models.CharField(max_length=255, blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
     graduation_year = models.CharField(max_length=4, blank=True, null=True)
     company = models.CharField(max_length=100, blank=True, null=True)
@@ -128,4 +129,6 @@ class SearchHistory(models.Model):
         ordering = ['-timestamp']
 
     def __str__(self):
-        return f"Search by {self.user.username} at {self.timestamp.strftime('%Y-%m-%d')}"    
+        query_parts = [self.name, self.department, self.company, self.graduation_year]
+        query = ', '.join(filter(None, query_parts)) or "Empty search"
+        return f"Search by {self.user.username}: '{query}'"    

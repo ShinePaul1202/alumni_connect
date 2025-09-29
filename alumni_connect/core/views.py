@@ -4,16 +4,18 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.views.decorators.http import require_POST
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from django.db.models import Q
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.core.paginator import Paginator
 from django.conf import settings
 # MODIFICATION: Imported the new form
 from .forms import (
-    RegistrationForm, UserUpdateForm, ProfileUpdateForm, SettingsForm, 
+    RegistrationForm, ProfileUpdateForm, SettingsForm, 
     AccountUserUpdateForm, AccountProfileUpdateForm, AccountProfileSettingsForm
 )
 from django.core.paginator import Paginator
@@ -156,92 +158,123 @@ def alumni_dashboard_view(request):
         profile.has_seen_verification_message = True
         profile.save(update_fields=['has_seen_verification_message'])
 
+    # Initialize all variables to default values
     recent_alumni = []
+    recommended_alumni = [] # <-- NEW: Initialize recommendations list
     connection_count = 0
     student_message_count = 0
 
     if profile.is_verified:
+        # Get recently joined alumni (your existing code)
         recent_alumni = Profile.objects.filter(
             user_type='alumni', is_verified=True
         ).exclude(user=request.user).order_by('-user__date_joined')[:5]
 
-        # --- THIS IS THE NEW LOGIC THAT WAS MISSING ---
-
-        # 1. Count accepted connections
+        # Get connection count (your existing code)
         connection_count = Connection.objects.filter(
             (Q(sender=request.user) | Q(receiver=request.user)),
             status=Connection.Status.ACCEPTED
         ).count()
 
-        # 2. Count unique conversations with students
+        # Get student message count (your existing code)
         student_message_count = Conversation.objects.filter(
             participants=request.user
         ).filter(
             memberships__user__profile__user_type='student'
         ).distinct().count()
 
-    # --- THIS IS THE UPDATED CONTEXT ---
+        # --- THIS IS THE FIX ---
+        # Call your existing AI recommender for the alumni dashboard.
+        # We will limit the results to the top 5 for a clean look.
+        try:
+            # The get_recommendations function returns a list of dictionaries.
+            # We extract just the 'profile' object from each dictionary.
+            recommendations_data = get_recommendations(profile)[:5]
+            recommended_alumni = [rec['profile'] for rec in recommendations_data]
+        except Exception as e:
+            # Handle potential errors from the recommender gracefully
+            print(f"Error getting AI recommendations for alumni dashboard: {e}")
+            recommended_alumni = [] # Ensure it's an empty list on error
+        # --- END OF FIX ---
+
+
     context = {
         'profile': profile,
         'recent_alumni': recent_alumni,
-        'connection_count': connection_count,          # Pass the correct connection count
-        'student_message_count': student_message_count  # Pass the correct student message count
+        'connection_count': connection_count,
+        'student_message_count': student_message_count,
+        'recommended_alumni': recommended_alumni  # <-- ADD the new variable to the context
     }
     return render(request, 'core/alumni_dashboard.html', context)
 
 @login_required
 def profile_view(request):
-    # Get the logged-in user's profile
     user_profile = get_object_or_404(Profile, user=request.user)
-
+    
+    # --- ADD THIS LOGIC ---
+    display_job_title = ""
+    if user_profile.user_type == 'alumni':
+        if user_profile.currently_employed and user_profile.job_title:
+            display_job_title = user_profile.job_title
+        elif user_profile.had_past_job and user_profile.past_job_title:
+            display_job_title = user_profile.past_job_title
+        else:
+            display_job_title = "Job title not specified"
+            
     context = {
-        'profile': user_profile,        # For the header/sidebar (logged-in user)
-        'viewed_profile': user_profile  # For the main content (it's the same person!)
+        'profile': user_profile,
+        'viewed_profile': user_profile,
+        'display_job_title': display_job_title, # <-- Pass to template
     }
     return render(request, 'core/profile_page.html', context)
 
 @login_required
 def profile_update_view(request):
     if request.method == 'POST':
-        u_form = UserUpdateForm(request.POST, instance=request.user)
+        # --- MODIFICATION: We only need to handle ONE form now ---
         p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
-        if u_form.is_valid() and p_form.is_valid():
-            u_form.save()
+        if p_form.is_valid():
             p_form.save()
             messages.success(request, 'Your profile has been updated successfully!')
-            return redirect('core:profile')
+            return redirect('core:profile') # Redirect to the profile page to see changes
     else:
-        u_form = UserUpdateForm(instance=request.user)
+        # --- MODIFICATION: Only instantiate the profile form ---
         p_form = ProfileUpdateForm(instance=request.user.profile)
-    profile = request.user.profile 
-    context = { 'u_form': u_form, 'p_form': p_form, 'profile': profile }
+
+    context = {
+        'p_form': p_form,
+        'profile': request.user.profile 
+    }
     return render(request, 'core/profile_update.html', context)
 
 @login_required
 @verification_required
 def profile_page_view(request, user_id):
-    """
-    Displays the profile page and checks the connection status between the
-    viewer and the profile owner.
-    """
     viewed_profile = get_object_or_404(Profile, user__id=user_id)
     user_profile = get_object_or_404(Profile, user=request.user)
-    context = {
-        'profile': user_profile,
-        'viewed_profile': viewed_profile,
-        'connection': None  # Default to no connection
-    }
+    
+    # --- ADD THIS LOGIC ---
+    display_job_title = ""
+    if viewed_profile.user_type == 'alumni':
+        if viewed_profile.currently_employed and viewed_profile.job_title:
+            display_job_title = viewed_profile.job_title
+        elif viewed_profile.had_past_job and viewed_profile.past_job_title:
+            display_job_title = viewed_profile.past_job_title
+        else:
+            display_job_title = "Job title not specified"
 
-    # --- THIS IS THE NEW LOGIC ---
-    # We only check for a connection if the user is viewing someone else's profile. 
+    connection = None
     if request.user.id != viewed_profile.user.id:
-        # Find if a connection exists in either direction
         connection = Connection.objects.filter(
             (Q(sender=request.user, receiver=viewed_profile.user) | Q(sender=viewed_profile.user, receiver=request.user))
         ).first()
-        context['connection'] = connection
-    # --- END OF NEW LOGIC ---
 
+    context = {
+        'profile': user_profile,
+        'viewed_profile': viewed_profile,
+        'connection': connection,
+        'display_job_title': display_job_title, # <-- Pass to template
+    }
     return render(request, 'core/profile_page.html', context)
 
 @login_required
@@ -250,17 +283,19 @@ def find_alumni(request):
     user_profile = get_object_or_404(Profile, user=request.user)
 
     # --- THE FIX: Use .strip() to handle empty searches correctly ---
+    name = request.GET.get("name", "").strip()
     department = request.GET.get("department", "").strip()
     graduation_year = request.GET.get("year", "").strip()
     company = request.GET.get("company", "").strip()
 
     # is_searching is now only True if at least one field has actual content
-    is_searching = bool(department or graduation_year or company)
+    is_searching = bool(name or department or graduation_year or company)
 
     # Save search history only if it's a real search
     if is_searching:
         SearchHistory.objects.create(
             user=request.user,
+            name=name,
             department=department,
             graduation_year=graduation_year,
             company=company
@@ -271,7 +306,12 @@ def find_alumni(request):
         base_queryset = Profile.objects.filter(
             is_verified=True, user_type="alumni"
         ).exclude(user=request.user)
-        
+
+        if name:
+            # This searches both the full_name field on the profile and the username field on the user
+            base_queryset = base_queryset.filter(
+                Q(full_name__icontains=name) | Q(user__username__icontains=name)
+            )
         if department:
             base_queryset = base_queryset.filter(department__icontains=department)
         if graduation_year:
@@ -430,17 +470,41 @@ def connection_list_view(request):
 
 
 @login_required
+@verification_required
 def notification_list_view(request):
-    """Display a list of notifications and mark them as read."""
-    notifications = Notification.objects.filter(recipient=request.user)
+    """Display a paginated list of notifications and mark them as read."""
+    # Get all notifications for the user first, ordered by newest first
+    all_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
     
-    # Mark all unread notifications as read when the user views the page
-    notifications.filter(is_read=False).update(is_read=True)
+    # --- THIS IS THE NEW PAGINATION LOGIC ---
+    paginator = Paginator(all_notifications, 15) # Show 15 notifications per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
-    return render(request, 'core/notifications.html', {
-        'notifications': notifications,
-        'profile': request.user.profile # For the sidebar
-    })
+    # --- IMPROVEMENT: Mark only the notifications on the CURRENT page as read ---
+    # This is more efficient than updating all notifications every time.
+    unread_ids = [n.id for n in page_obj if not n.is_read]
+    if unread_ids:
+        Notification.objects.filter(pk__in=unread_ids).update(is_read=True)
+
+    context = {
+        'notifications_page': page_obj,  # Pass the page object to the template
+        'profile': request.user.profile
+    }
+    return render(request, 'core/notifications.html', context)
+
+@login_required
+@require_POST # Ensures this can only be accessed via a POST request for security
+def delete_notification(request, notification_id):
+    """Deletes a single notification if the user is the recipient."""
+    # Find the notification, ensuring it belongs to the logged-in user.
+    # This is a critical security step.
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    
+    notification.delete()
+    
+    messages.success(request, "Notification removed.")
+    return redirect('core:notification_list')
 
 @login_required
 def settings_home_view(request):

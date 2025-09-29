@@ -146,6 +146,17 @@ def conversation_view(request, pk):
     return render(request, "messaging/conversation.html", context)
 
 
+# messaging/views.py
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import Conversation, Message, MessageFile
+
+
 @require_POST
 @login_required
 def send_message_ajax(request, pk):
@@ -153,48 +164,64 @@ def send_message_ajax(request, pk):
     Saves a single message with text and/or multiple files,
     then broadcasts it via the WebSocket consumer.
     """
+    # 1. SECURITY CHECK: Get the conversation and ensure the current user is a participant.
+    # This prevents users from sending messages to conversations they don't belong to.
     convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
+
+    # 2. DATA EXTRACTION: Get text and files from the incoming request.
     text = (request.POST.get("text") or "").strip()
     files = request.FILES.getlist('file')
 
+    # 3. VALIDATION: Ensure the message is not empty.
     if not text and not files:
         return JsonResponse({"ok": False, "error": "Message cannot be empty"}, status=400)
 
-    # --- THIS IS THE FIX ---
-    # 1. Create a single message that can contain the text.
+    # 4. DATABASE: Create the Message object and link any files.
+    # Create the main message object with the text content.
     msg = Message.objects.create(conversation=convo, sender=request.user, text=text)
-    
-    # 2. Create MessageFile objects for each uploaded file and link them to the *same* message.
+
+    # Process and link each uploaded file to the message.
     file_data_list = []
     for f in files:
+        # Create a MessageFile instance for each file.
         message_file = MessageFile.objects.create(file=f)
+        # Add it to the many-to-many relationship on the message.
         msg.files.add(message_file)
+        # Prepare file data for the WebSocket payload.
         file_data_list.append({
             'url': message_file.file.url,
-            'name': str(message_file.file.name).split('/')[-1]
+            'name': str(message_file.file.name).split('/')[-1] # Get just the filename
         })
-    
-    # 3. Update the conversation's timestamp.
-    convo.save() 
-    # --- End of the fix ---
 
-    # Broadcast the single new message via Channels
+    # 5. UPDATE CONVERSATION: Trigger the `updated_at` field by saving the conversation.
+    # This is crucial for sorting the conversation list correctly.
+    convo.save()
+
+    # 6. BROADCAST: Send the new message data to the WebSocket group.
     channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f'chat_{pk}', 
-        {
-            'type': 'chat_message', 
-            'message': { 
-                "id": msg.id,
-                "sender_id": msg.sender.id,
-                "sender_username": msg.sender.username,
-                "text": msg.text,
-                "created": msg.created_at.strftime("%H:%M"),
-                "files": file_data_list, # Pass the list of files
-            }
+
+    # The payload dictionary must contain everything the frontend needs to render the message
+    # AND update the conversation list.
+    payload = {
+        'type': 'chat_message',  # This tells the consumer which method to run
+        'message': {
+            "id": msg.id,
+            "conversation_id": pk, # Essential for updating the correct chat in the list
+            "sender_id": msg.sender.id,
+            "sender_username": msg.sender.username,
+            "text": msg.text,
+            "created": msg.created_at.strftime("%H:%M"),
+            "files": file_data_list, # List of dictionaries for any files
         }
+    }
+
+    # Use async_to_sync to call the async group_send method from this sync view.
+    async_to_sync(channel_layer.group_send)(
+        f'chat_{pk}',  # The group name must match the one in the consumer
+        payload
     )
-    
+
+    # 7. RESPONSE: Return a success response to the client's AJAX call.
     return JsonResponse({"ok": True})
 
 @login_required

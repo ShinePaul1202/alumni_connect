@@ -1,22 +1,36 @@
-# alumni_connect/asgi.py
+# alumni_connect/alumni_connect/asgi.py
+
 import os
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'alumni_connect.settings')
-django_asgi_app = get_asgi_application()
+# --- THIS IS THE FIX ---
+# Import WhiteNoise for serving static files
+from whitenoise import WhiteNoise
+# --- END OF FIX ---
 
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from whitenoise import WhiteNoise
+from channels.security.websocket import AllowedHostsOriginValidator
 import messaging.routing
 
-http_application = WhiteNoise(django_asgi_app)
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'alumni_connect.settings')
+
+# This is the base Django app
+django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
-    "http": http_application,
-    "websocket": AuthMiddlewareStack(
-        URLRouter(
-            messaging.routing.websocket_urlpatterns
+    # --- THIS IS THE FIX ---
+    # Wrap the Django app with WhiteNoise for static file serving.
+    # This is ONLY for development when running Daphne directly.
+    "http": WhiteNoise(django_asgi_app),
+    # --- END OF FIX ---
+
+    # WebSocket chat handler
+    "websocket": AllowedHostsOriginValidator(
+        AuthMiddlewareStack(
+            URLRouter(
+                messaging.routing.websocket_urlpatterns
+            )
         )
     ),
 })

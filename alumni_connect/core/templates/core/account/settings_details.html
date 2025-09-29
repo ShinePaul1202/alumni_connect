@@ -11,83 +11,67 @@
     <!-- CSS and Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --sidebar-bg: #1e293b;
-            --main-bg: #f8fafc;
-            --text-dark: #0f172a;
-            --text-light: #e2e8f0;
-            --text-muted: #64748b;
             --primary-color: #3b82f6;
-            --border-color: #e2e8f0;
-            --card-bg: white;
-            --shadow-color: rgba(99, 102, 241, 0.1);
             --sidebar-width: 260px;
+            --light-gray-bg: #f1f5f9;
         }
-
-        body { background-color: var(--main-bg); color: var(--text-dark); font-family: 'Poppins', sans-serif; overflow-x: hidden; }
-        .dashboard-container { display: flex; position: relative; }
-
-        /* --- Sidebar Styles --- */
-        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); padding: 1.5rem; flex-shrink: 0; height: 100vh; position: sticky; top: 0; transition: margin-left 0.3s ease; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; overflow-y: hidden; background-color: #f0f9ff; }
+        .dashboard-container { display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: var(--sidebar-width); background: linear-gradient(-45deg, #1d2b64, #485563, #2b5876, #4e4376); background-size: 400% 400%; animation: gradientAnimation 15s ease infinite; padding: 1.5rem; display: flex; flex-direction: column; color: white; flex-shrink: 0; height: 100vh; position: sticky; top: 0; z-index: 1000; position: relative; overflow: hidden; }
+        @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .main-content { flex-grow: 1; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 2.5rem; width: calc(100% - var(--sidebar-width)); position: relative; overflow-y: auto; }
+        .floating-particle { position: absolute; width: 4px; height: 4px; background: rgba(59, 130, 246, 0.6); border-radius: 50%; pointer-events: none; animation: floatUp 6s ease-out infinite; }
+        @keyframes floatUp { 0% { opacity: 0; transform: translateY(100px) scale(0); } 10% { opacity: 1; transform: translateY(80px) scale(1); } 50% { opacity: 0.8; transform: translateY(-20px) scale(1.2); } 100% { opacity: 0; transform: translateY(-120px) scale(0.5); } }
         .brand-logo { display: flex; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; font-size: 1.75rem; font-weight: 700; margin-bottom: 2.5rem; }
-        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; color: var(--text-light); text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease; }
-        .sidebar-nav .nav-item:not(.active):hover { background-color: rgba(255, 255, 255, 0.07); border-left-color: var(--primary-color); }
-        .sidebar-nav .nav-item.active { background-color: var(--primary-color); color: #fff; font-weight: 500; }
-        .sidebar-nav .nav-item.disabled { color: #64748b; pointer-events: none; background-color: transparent; }
-        .sidebar-nav .nav-item.disabled:hover { background-color: transparent; border-left-color: transparent; }
+        .brand-logo svg { animation: brandGlow 3s ease-in-out infinite; }
+        @keyframes brandGlow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3)); } 50% { transform: scale(1.01); filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.5)); } }
+        .sidebar-nav { position: relative; z-index: 10; }
+        .sidebar-nav .nav-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.75rem; border-radius: 1rem; color: rgba(255, 255, 255, 0.9); text-decoration: none; transition: all 0.3s ease; position: relative; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .sidebar-nav .nav-item:not(.active):hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px) translateX(5px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); border-color: rgba(255, 255, 255, 0.2); }
+        .sidebar-nav .nav-item.active { background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff; font-weight: 500; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4); transform: translateY(-3px); }
         .sidebar-nav .nav-item i { width: 20px; text-align: center; }
-
-        /* --- Main Content & Header Styles --- */
-        .main-content { flex-grow: 1; padding: 2.5rem; width: calc(100% - var(--sidebar-width)); transition: margin-left 0.3s ease; }
-        .header { display: flex; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
-        .btn-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-dark); text-decoration: none; transition: background-color 0.2s ease, box-shadow 0.2s ease; }
-        .btn-back:hover { background-color: #f3f4f6; border-color: #d1d5db; }
+        .sidebar-nav .nav-item.disabled { color: rgba(255, 255, 255, 0.4); pointer-events: none; }
+        .main-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 1rem; margin-bottom: 2.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); position: relative; z-index: 100; }
+        .header-title-wrapper { display: flex; align-items: center; gap: 1rem; min-width: 0; }
+        .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-title .main-subtitle { color: #64748b; margin: 0; font-size: 0.9rem; }
+        .profile-dropdown { position: relative; margin-left: auto; flex-shrink: 0; }
+        .profile-dropdown-btn img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; cursor: pointer; transition: all 0.3s ease; border: 2px solid rgba(59, 130, 246, 0.3); }
+        .profile-dropdown-btn:hover img { transform: scale(1.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        .profile-dropdown-menu { position: absolute; top: 100%; right: 0; min-width: 200px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 1rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 0.5rem 0; z-index: 9999; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s ease; }
+        .profile-dropdown:hover .profile-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .profile-dropdown-menu a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: #1e293b; text-decoration: none; font-size: 0.95rem; transition: background-color 0.2s ease; }
+        .profile-dropdown-menu a:hover { background: rgba(59, 130, 246, 0.1); }
+        .card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 1.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .sidebar-toggle { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); color: #1e293b; border-radius: 0.75rem; padding: 0.5rem 0.75rem; transition: all 0.2s ease; }
+        .sidebar-toggle:hover { background: rgba(255, 255, 255, 0.4); transform: scale(1.05); }
+        .form-label { font-weight: 500; color: #4b5563; }
+        .form-control, .form-select, input[type="email"] { background-color: var(--light-gray-bg) !important; border: 1px solid transparent !important; border-radius: 0.75rem !important; padding: 0.75rem 1rem !important; font-weight: 500 !important; transition: all 0.2s ease-in-out !important; }
+        .form-control:focus, .form-select:focus, input[type="email"]:focus { background-color: #fff !important; border: 1px solid var(--primary-color) !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important; }
         
-        /* --- Form Styles --- */
-        .form-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); }
-        .form-label { font-weight: 600; }
-        .form-control, .form-select { 
-            padding: 0.75rem 1rem; 
-            border-color: #d1d5db; 
-            height: 100%; /* Ensure consistent height */
+        /* --- THIS IS THE FIX --- */
+        .form-control:disabled, .form-select:disabled, input[type="email"]:disabled { 
+            background-color: #e9ecef !important; 
+            cursor: not-allowed !important; 
+            opacity: 0.8 !important; /* Make it slightly more visible than default */
         }
-        .form-control:focus, .form-select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        .form-control[disabled], .form-control[readonly] { background-color: #f3f4f6; cursor: not-allowed; }
-        .form-text { font-size: 0.875rem; }
-        .btn-primary { padding: 0.75rem 1.5rem; font-weight: 500; }
+        /* --- END OF FIX --- */
         
-        /* Input Group Styles - FIXED */
-        .input-group { 
-            display: flex;
-            align-items: stretch; /* Ensure all elements stretch to same height */
-        }
-        .input-group-text { 
-            background-color: #f9fafb; 
-            border-color: #d1d5db; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 45px;
-            padding: 0.75rem 0.75rem;
-        }
-        .input-group .form-control { 
-            flex: 1 1 auto;
-            width: 1%;
-            min-width: 0;
-        }
-
-        /* --- Responsive Styles --- */
-        .sidebar-toggle { display: none; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-        @media (max-width: 991.98px) {
-            .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.3s ease; }
-            .main-content { width: 100%; padding: 1.5rem; }
-            .sidebar-toggle { display: block; background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; width: 40px; height: 40px; }
-            body.sidebar-visible .sidebar { transform: translateX(0); }
-            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
-        }
+        #outer-circle-nav { animation: rotate-clockwise 20s linear infinite; }
+        #inner-circle-nav { animation: rotate-counter-clockwise 15s linear infinite; }
+        #needle-nav { animation: pulse 2s ease-in-out infinite; }
+        @keyframes rotate-clockwise { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotate-counter-clockwise { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+        @keyframes pulse { 50% { filter: drop-shadow(0 0 8px #0D6EFD); } }
+        @media (max-width: 991.98px) { .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); } body.sidebar-visible .sidebar { transform: translateX(0); } .main-content { width: 100%; padding: 1.5rem; } .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } .main-header { flex-wrap: nowrap; } .header-title-wrapper { flex-grow: 1; min-width: 0; } .header-title { flex-grow: 1; min-width: 0; } .main-title.stacked-title { line-height: 1.2; font-size: 1.2rem; font-weight: 700; } .main-title.stacked-title span { display: block; } .header-title .main-subtitle { display: none; } .back-button-desktop { display: none; } .back-button-mobile { display: inline-flex; } }
+        .back-button-mobile { display: none; }
     </style>
 </head>
 <body>
@@ -95,113 +79,88 @@
         <div class="overlay" id="overlay"></div>
         <aside class="sidebar" id="sidebar">
             <a href="{% url 'core:home' %}" class="brand-logo">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g><g><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g><g><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg><span>AluLink</span></a>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g id="outer-circle-nav" style="transform-origin: center;"><path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 9.253 20.941 6.786 19.23 5" stroke="white" stroke-width="1.5"/></g>
+                    <g id="inner-circle-nav" style="transform-origin: center;"><path d="M15.195 8.368C14.337 7.51 13.235 7 12 7C9.239 7 7 9.239 7 12C7 13.235 7.51 14.337 8.368 15.195" stroke="white" stroke-width="1.5"/></g>
+                    <g id="needle-nav"><path d="M12.5 12L19 5.5" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                </svg>
+                <span>AluLink</span>
+            </a>
             <nav class="sidebar-nav mt-3">
                 {% if profile.user_type == 'alumni' %}<a href="{% url 'core:alumni_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% else %}<a href="{% url 'core:student_dashboard' %}" class="nav-item"><i class="fa-solid fa-table-columns fa-fw"></i><span>Dashboard</span></a>{% endif %}
                 {% if profile.is_verified and not profile.fraud_warning %}
-                    <!-- Unlocked Links -->
                     <a href="{% url 'core:find_alumni' %}" class="nav-item"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                    <a href="{% url 'messaging:inbox' %}" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>
-                        {% if unread_message_count > 0 %}
-                            <span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>
-                        {% endif %}
-                    </a>
-                    <a href="{% url 'core:connection_requests' %}" class="nav-item"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>
-                        {% if pending_request_count > 0 %}
-                            <span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>
-                        {% endif %}
-                    </a>
-
-                    <!-- === MODIFICATION FOR NOTIFICATIONS BADGE === -->
-                    <a href="{% url 'core:notification_list' %}" class="nav-item"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>
-                        {% if unread_notification_count > 0 %}
-                            <span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>
-                        {% endif %}
-                    </a>
+                    <a href="{% url 'messaging:inbox' %}" class="nav-item"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span>{% if unread_message_count > 0 %}<span class="badge bg-danger ms-auto">{{ unread_message_count }}</span>{% endif %}</a>
+                    <a href="{% url 'core:connection_requests' %}" class="nav-item"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span>{% if pending_request_count > 0 %}<span class="badge bg-danger ms-auto">{{ pending_request_count }}</span>{% endif %}</a>
+                    <a href="{% url 'core:notification_list' %}" class="nav-item"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span>{% if unread_notification_count > 0 %}<span class="badge bg-danger ms-auto">{{ unread_notification_count }}</span>{% endif %}</a>
                 {% else %}
-                    <!-- Locked Links -->
-                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
-                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
-                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
-                    <a href="#" class="nav-item disabled" title="This feature is locked until your account is verified."><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
-
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-users fa-fw"></i><span>Find Alumni</span></a>
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-envelope fa-fw"></i><span>Messages</span></a>
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-user-plus fa-fw"></i><span>Requests</span></a>
+                    <a href="#" class="nav-item disabled"><i class="fa-solid fa-bell fa-fw"></i><span>Notifications</span></a>
                 {% endif %}
                 <a href="{% url 'core:account_settings' %}" class="nav-item active"><i class="fa-solid fa-gear fa-fw"></i><span>Settings</span></a>
             </nav>
         </aside>
 
         <main class="main-content">
-            <div class="header">
-                <button class="sidebar-toggle" id="sidebar-toggle-btn"><i class="fa-solid fa-bars"></i></button>
-                <a href="{% url 'core:account_settings' %}" class="btn-back" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
-            </div>
-
-            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}
-            
-            <div class="form-card">
-                <div class="card-body p-4 p-md-5">
-                    {% if can_edit_critical_details %}
-                        {# This message shows when the fields ARE editable #}
-                        <div class="alert alert-info" role="alert">
-                            <i class="fa-solid fa-circle-info me-2"></i>
-                            Please review your Admission Number, Department, and Graduation Year carefully. This is a <strong>one-time opportunity</strong> to correct any errors before your account is verified.
+            <header class="main-header">
+                <div class="header-title-wrapper">
+                    <button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button"><i class="fa-solid fa-bars"></i></button>
+                    <div class="header-title d-flex align-items-center">
+                        <a href="{% url 'core:account_settings' %}" class="btn btn-light me-3 back-button-desktop" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
+                        <a href="{% url 'core:account_settings' %}" class="btn btn-light me-2 back-button-mobile" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
+                        <div>
+                            <h1 class="main-title d-inline-block stacked-title">
+                                <span>Account</span>
+                                <span>Details</span>
+                            </h1>
                         </div>
-                    {% else %}
-                        {# This message shows when the fields ARE NOT editable (locked) #}
-                        <div class="alert alert-warning" role="alert">
-                            <i class="fa-solid fa-lock me-2"></i>
-                            Your Admission Number, Department, and Graduation Year are now locked. These details can only be changed <strong>once</strong>, and were only editable <strong>before your account was verified</strong> or if an administrator requested a correction.
-                        </div>
-                    {% endif %}
-                    <h2 class="h3 fw-bold mb-1">Account Details</h2>
-                    <p class="text-muted mb-4">Update your academic and contact information.</p>
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        <div class="mb-4">
-                            <label for="{{ user_form.username.id_for_label }}" class="form-label">Admission No (Username)</label>
-                            {{ user_form.username }}
-                            <div class="form-text">{{ user_form.username.help_text }}</div>
-                        </div>
-                        
-                        <!-- Input Group for Email - FIXED ALIGNMENT -->
-                        <div class="mb-4">
-                            <label for="{{ user_form.email.id_for_label }}" class="form-label">Email Address</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fa-solid fa-at fa-fw"></i></span>
-                                <input type="email" name="{{ user_form.email.name }}" id="{{ user_form.email.id_for_label }}" 
-                                       value="{{ user_form.email.value|default:'' }}" class="form-control" 
-                                       placeholder="Enter your email address" {% if user_form.email.field.required %}required{% endif %}>
-                            </div>
-                            {% if user_form.email.errors %}
-                                <div class="text-danger mt-1">
-                                    {% for error in user_form.email.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="{{ profile_form.department.id_for_label }}" class="form-label">Department</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-building-columns fa-fw"></i></span>
-                                    {{ profile_form.department }}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ profile_form.graduation_year.id_for_label }}" class="form-label">Graduation Year</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-calendar-days fa-fw"></i></span>
-                                    {{ profile_form.graduation_year }}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </form>
+                    </div>
                 </div>
+                <div class="profile-dropdown">
+                    <div class="profile-dropdown-btn"><img src="{{ profile.avatar.url }}" alt="Profile"></div>
+                    <div class="profile-dropdown-menu"><a href="{% url 'core:profile' %}"><i class="fa-solid fa-user fa-fw"></i> My Profile</a><a href="{% url 'core:account_settings' %}"><i class="fa-solid fa-gear fa-fw"></i>Settings</a><hr class="my-1"><a href="{% url 'core:logout' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Logout</a></div>
+                </div>
+            </header>
+            
+            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}
+
+            <div class="card p-4 p-md-5">
+                {% if can_edit_critical_details %}
+                    <div class="alert alert-info" role="alert"><i class="fa-solid fa-circle-info me-2"></i>Please review your Admission Number, Department, and Graduation Year carefully. This is a <strong>one-time opportunity</strong> to correct any errors before your account is verified.</div>
+                {% else %}
+                    <div class="alert alert-warning" role="alert"><i class="fa-solid fa-lock me-2"></i>Your Admission Number, Department, and Graduation Year are now locked and cannot be changed.</div>
+                {% endif %}
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="{{ user_form.username.id_for_label }}" class="form-label">Admission No (Username)</label>
+                        {{ user_form.username }}
+                        <div class="form-text">{{ user_form.username.help_text }}</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="{{ user_form.email.id_for_label }}" class="form-label">Email Address</label>
+                        {{ user_form.email }}
+                        {% if user_form.email.errors %}<div class="text-danger mt-1">{% for error in user_form.email.errors %}{{ error }}{% endfor %}</div>{% endif %}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.department.id_for_label }}" class="form-label">Department</label>
+                            {{ profile_form.department }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.graduation_year.id_for_label }}" class="form-label">Graduation Year</label>
+                            {{ profile_form.graduation_year }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
             </div>
         </main>
     </div>
@@ -214,13 +173,22 @@
             const body = document.body;
             if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
             if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }
-            
-            // Add Bootstrap classes to form fields if they're missing
-            document.querySelectorAll('input, select, textarea').forEach(field => {
-                if (!field.classList.contains('form-control')) {
-                    field.classList.add('form-control');
-                }
-            });
+
+            function createFloatingParticle() {
+                const sidebar = document.querySelector('.sidebar');
+                if (!sidebar) return;
+                const particle = document.createElement('div');
+                particle.className = 'floating-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 2 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                const colors = ['rgba(59, 130, 246, 0.6)', 'rgba(96, 165, 250, 0.6)', 'rgba(147, 197, 253, 0.6)'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                sidebar.appendChild(particle);
+                setTimeout(() => { particle.remove(); }, 6000);
+            }
+            setInterval(createFloatingParticle, 1500);
+            for(let i = 0; i < 5; i++) { setTimeout(createFloatingParticle, i * 300); }
         });
     </script>
 </body>

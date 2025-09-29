@@ -70,20 +70,24 @@ class RegistrationForm(forms.Form):
             raise forms.ValidationError("An account with this email address already exists.")
         return email
 
-# --- FORM FOR UPDATING USER'S FIRST/LAST NAME ---
-class UserUpdateForm(forms.ModelForm):
-    first_name = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'placeholder': 'First Name'}))
-    last_name = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'placeholder': 'Last Name'}))
-
-    class Meta:
-        model = User
-        fields = ['first_name', 'last_name']
-
-# --- THIS IS THE CORRECTED FORM ---
 class ProfileUpdateForm(forms.ModelForm):
+    # --- THIS IS THE FIX ---
+    # We explicitly define the full_name field to control its label and placeholder
+    full_name = forms.CharField(
+        max_length=150, 
+        required=True, 
+        label="Full Name",
+        widget=forms.TextInput(attrs={'placeholder': 'Your Full Name'})
+    )
+
     class Meta:
         model = Profile
-        fields = [ 'bio', 'avatar', 'currently_employed', 'job_title', 'company_name', 'had_past_job', 'past_job_title', 'past_company_name' ]
+        # --- MODIFICATION: Add 'full_name' to the beginning of the list ---
+        fields = [
+            'full_name', 'avatar', 'bio', 
+            'currently_employed', 'job_title', 'company_name', 
+            'had_past_job', 'past_job_title', 'past_company_name'
+        ]
         widgets = {
             'bio': forms.Textarea(attrs={'placeholder': 'A short bio to appear on your profile...'}),
             'job_title': forms.TextInput(attrs={'placeholder': 'e.g., Software Engineer'}),
@@ -92,9 +96,12 @@ class ProfileUpdateForm(forms.ModelForm):
             'past_company_name': forms.TextInput(attrs={'placeholder': 'e.g., Microsoft'}),
         }
         labels = {
-            'bio': 'About Me',
-            'avatar': 'Change Profile Picture', 'currently_employed': 'I am currently employed', 'job_title': 'Current Job Title',
-            'company_name': 'Current Company', 'had_past_job': 'I have past work experience', 'past_job_title': 'Past Job Title',
+            'avatar': 'Change Profile Picture', 
+            'currently_employed': 'I am currently employed', 
+            'job_title': 'Current Job Title',
+            'company_name': 'Current Company', 
+            'had_past_job': 'I have past work experience', 
+            'past_job_title': 'Past Job Title',
             'past_company_name': 'Past Company',
         }
 
