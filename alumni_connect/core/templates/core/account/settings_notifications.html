@@ -34,11 +34,11 @@
         .sidebar-nav .nav-item.active { background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff; font-weight: 500; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4); transform: translateY(-3px); }
         .sidebar-nav .nav-item i { width: 20px; text-align: center; }
         .sidebar-nav .nav-item.disabled { color: rgba(255, 255, 255, 0.4); pointer-events: none; }
-        .main-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); position: relative; z-index: 100; }
-        .header-title-wrapper { display: flex; align-items: center; gap: 1rem; }
-        .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; color: #1e293b; }
+        .main-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 1rem; margin-bottom: 2.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); position: relative; z-index: 100; }
+        .header-title-wrapper { display: flex; align-items: center; gap: 1rem; min-width: 0; }
+        .header-title .main-title { font-weight: 700; margin: 0; font-size: 1.75rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .header-title .main-subtitle { color: #64748b; margin: 0; font-size: 0.9rem; }
-        .profile-dropdown { position: relative; margin-left: auto; }
+        .profile-dropdown { position: relative; margin-left: auto; flex-shrink: 0; }
         .profile-dropdown-btn img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; cursor: pointer; transition: all 0.3s ease; border: 2px solid rgba(59, 130, 246, 0.3); }
         .profile-dropdown-btn:hover img { transform: scale(1.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
         .profile-dropdown-menu { position: absolute; top: 100%; right: 0; min-width: 200px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 1rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 0.5rem 0; z-index: 9999; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s ease; }
@@ -62,21 +62,27 @@
             .sidebar { position: fixed; left: 0; top: 0; z-index: 1050; transform: translateX(-100%); } 
             body.sidebar-visible .sidebar { transform: translateX(0); } 
             .main-content { width: 100%; padding: 1.5rem; } 
-            .header-title .main-subtitle { display: none; } 
             .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; } 
-            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; }
+            body.sidebar-visible .overlay { opacity: 1; pointer-events: auto; } 
+            .main-header { flex-wrap: nowrap; }
+            .header-title-wrapper { flex-grow: 1; min-width: 0; }
+            .header-title { flex-grow: 1; min-width: 0; }
+            .header-title .main-subtitle { display: none; } 
+            .back-button-desktop { display: none; } 
+            .back-button-mobile { display: inline-flex; } 
             
             /* --- THIS IS THE FIX --- */
-            .header-title .main-title { font-size: 1.25rem; } /* Make title smaller */
-            .back-button-desktop { display: none; } /* Hide the desktop back button */
-            .back-button-mobile { display: inline-flex; } /* Show the mobile back button */
-            .main-header .header-title-wrapper .header-title { display: none; } /* Hide the title on mobile */
+            .main-title.stacked-title {
+                line-height: 1.2;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+            .main-title.stacked-title span {
+                display: block; /* This creates the line break */
+            }
             /* --- END OF FIX --- */
         }
-        
-        /* --- NEW: Default state for mobile back button --- */
         .back-button-mobile { display: none; }
-
     </style>
 </head>
 <body>
@@ -109,14 +115,16 @@
             <header class="main-header">
                 <div class="header-title-wrapper">
                     <button class="sidebar-toggle me-3 d-lg-none" id="sidebar-toggle-btn" type="button"><i class="fa-solid fa-bars"></i></button>
-                    <!-- NEW: Back button for mobile -->
-                    <a href="{% url 'core:account_settings' %}" class="btn btn-light back-button-mobile" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
-                    <div class="header-title">
-                        <!-- NEW: Back button for desktop -->
+                    <div class="header-title d-flex align-items-center">
                         <a href="{% url 'core:account_settings' %}" class="btn btn-light me-3 back-button-desktop" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
+                        <a href="{% url 'core:account_settings' %}" class="btn btn-light me-2 back-button-mobile" title="Back to Settings"><i class="fa-solid fa-arrow-left"></i></a>
                         <div>
-                            <h1 class="main-title d-inline-block">Notification Settings</h1>
-                            <p class="main-subtitle">Control how you receive notifications.</p>
+                            <!-- THIS IS THE FIX: HTML structure for the responsive title -->
+                            <h1 class="main-title d-inline-block stacked-title">
+                                <span>Notification</span>
+                                <span>Settings</span>
+                            </h1>
+                            <p class="main-subtitle d-none d-lg-block">Control how you receive notifications.</p>
                         </div>
                     </div>
                 </div>
