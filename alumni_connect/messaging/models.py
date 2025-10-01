@@ -31,9 +31,28 @@ class Message(models.Model):
     class Meta:
         ordering = ["created_at"]
 
+    def is_delivered_to_all(self):
+        """Checks if the message has been delivered to all participants except the sender."""
+        participants_count = self.conversation.participants.exclude(id=self.sender.id).count()
+        return self.delivery_receipts.count() >= participants_count
+
+    def is_read_by_all(self):
+        """Checks if the message has been read by all participants except the sender."""
+        participants_count = self.conversation.participants.exclude(id=self.sender.id).count()
+        return self.receipts.count() >= participants_count
+
 class MessageFile(models.Model):
     file = models.FileField(upload_to='message_files/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+class DeliveryReceipt(models.Model):
+    """Tracks when a message is successfully delivered to a user's client."""
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='delivery_receipts')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delivery_receipts')
+    delivered_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('message', 'user')
 
 class ReadReceipt(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='receipts')

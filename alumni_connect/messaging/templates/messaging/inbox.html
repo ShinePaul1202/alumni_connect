@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- All page styles are included here for completeness -->
     <style>
         :root {
             --primary-color: #3b82f6; --sidebar-width: 260px; --text-dark: #0f172a;
@@ -117,8 +118,8 @@
                     <div class="list-group list-group-flush chat-list" id="chat-list-container">
                         {% for item in conversations %}
                             {% with convo=item.conversation other=item.other last=item.last last_message_text=item.last_message_text %}
-                                <div class="chat-link-wrapper">
-                                    <a href="{% if other %}{% url 'messaging:conversation_view' pk=convo.pk %}{% else %}#{% endif %}"
+                                <div class="chat-link-wrapper" id="convo-wrapper-{{ convo.id }}">
+                                    <a href="{% url 'messaging:conversation_view' pk=convo.pk %}"
                                        class="list-group-item list-group-item-action p-3 chat-link"
                                        data-name="{% if other %}{{ other.get_full_name|default:other.username|lower }}{% else %}deleted user{% endif %}"
                                        data-usertype="{% if other %}{{ other.profile.user_type }}{% else %}none{% endif %}"
@@ -170,99 +171,80 @@
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="deleteModalLabel">Confirm Deletion</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to remove this chat from your inbox? This action cannot be undone.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete Chat</button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title fw-bold" id="deleteModalLabel">Confirm Deletion</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-body">Are you sure you want to remove this chat from your inbox? This action cannot be undone.</div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete Chat</button></div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Paste this entire <script> block at the bottom of your inbox.html file -->
-<script>
+
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- 1. SETUP: All variables and constants ---
+        // --- 1. SETUP & STATE MANAGEMENT ---
         const chatWindowContainer = document.getElementById('chat-window-container');
         const chatListContainer = document.getElementById('chat-list-container');
         const body = document.body;
         const csrftoken = getCookie("csrftoken");
-        const currentUserId = {{ request.user.id }};
+        const currentUserId = parseInt("{{ request.user.id }}", 10);
 
         let chatSocket = null;
-        let lastId = 0;
+        let currentConversationId = null;
+        let pressTimer = null;
         let selectionMode = false;
         let selectedMessages = new Set();
-        let pressTimer = null;
+        let unreadMessagesQueue = new Set();
 
-        const deleteModalElement = document.getElementById('deleteConfirmModal');
-        const deleteModal = new bootstrap.Modal(deleteModalElement);
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
 
-        const toggleButton = document.getElementById('sidebar-toggle-btn');
-        const overlay = document.getElementById('overlay');
-        const searchInput = document.getElementById('chat-search-input');
-        const userTypeFilter = document.getElementById('chat-usertype-filter');
-        const departmentFilter = document.getElementById('chat-department-filter');
-        
-        const originalConversations = Array.from(chatListContainer.querySelectorAll('.chat-link-wrapper'));
+        // --- 2. WEBSOCKET LOGIC ---
+        function connectToWebSocket(conversationId) {
+            if (chatSocket && chatSocket.readyState !== WebSocket.CLOSED) chatSocket.close();
+            currentConversationId = conversationId;
+            unreadMessagesQueue.clear();
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const wsUrl = `${wsProtocol}://${window.location.host}/ws/chat/${conversationId}/`;
+            chatSocket = new WebSocket(wsUrl);
+            chatSocket.onopen = () => console.log(`WebSocket connected for conversation ${conversationId}.`);
+            chatSocket.onmessage = handleSocketMessage;
+            chatSocket.onclose = () => console.warn(`WebSocket disconnected from conversation ${conversationId}.`);
+            chatSocket.onerror = (err) => console.error('WebSocket Error:', err);
+        }
 
-        // --- 2. HELPER FUNCTIONS ---
+        function handleSocketMessage(e) {
+            const data = JSON.parse(e.data);
+            console.log("WebSocket received:", data);
+            switch (data.type) {
+                case 'new_message': handleNewMessage(data.message); break;
+                case 'user_status': updateUserStatus(data.user_id, data.is_online); break;
+                case 'message_delivered': updateMessageTicks(data.message_ids, 'delivered', data.delivered_to_id); break;
+                case 'messages_read': updateMessageTicks(data.message_ids, 'read', data.reader_id); break;
+                case 'message_deleted': document.querySelector(`.msg-wrapper[data-msg-id="${data.message_id}"]`)?.remove(); break;
+            }
+        }
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== "") {
-                const cookies = document.cookie.split(";");
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + "=")) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
+        // --- 3. UI RENDERING & DOM MANIPULATION ---
+        function handleNewMessage(messageData) {
+            if (messageData.conversation_id == currentConversationId) {
+                appendMessage(messageData, messageData.sender_id === currentUserId);
+                if (messageData.sender_id !== currentUserId) {
+                    sendDeliveryConfirmation([messageData.id]);
+                    if (document.hidden) {
+                        unreadMessagesQueue.add(messageData.id);
+                    } else {
+                        sendReadReceipt([messageData.id]);
                     }
                 }
             }
-            return cookieValue;
+            updateChatList(messageData);
         }
-
-        function updateChatList(messageData) {
-            const convoId = messageData.conversation_id;
-            if (!convoId) return;
-
-            const chatLink = document.querySelector(`.chat-link[href*='/conversation/${convoId}/']`);
-            if (!chatLink) return;
-            
-            const chatWrapper = chatLink.closest('.chat-link-wrapper');
-            if (!chatWrapper) return;
-
-            const lastMessageEl = chatWrapper.querySelector('.last-message');
-            const chatTimeEl = chatWrapper.querySelector('.chat-time');
-
-            if (lastMessageEl) {
-                let prefix = messageData.sender_id === currentUserId ? "You: " : "";
-                let newText = `${prefix}${messageData.text}`;
-                lastMessageEl.textContent = newText.length > 25 ? newText.substring(0, 22) + '...' : newText;
-            }
-
-            if (chatTimeEl) {
-                chatTimeEl.textContent = messageData.created;
-            }
-
-            if (chatListContainer) {
-                chatListContainer.prepend(chatWrapper);
-            }
-        }
-
+        
         function appendMessage(m, isMe) {
             const chatEl = document.getElementById("chat");
             if (!chatEl) return;
-            lastId = m.id;
+            const messageDate = new Date(m.created_at);
+            const localTime = messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             let fileHtml = '';
             if (m.files && m.files.length > 0) {
                 m.files.forEach(file => {
@@ -274,378 +256,256 @@
                 });
             }
             const textHtml = m.text ? m.text.replace(/\n/g, "<br>") : '';
+            const readReceiptHtml = isMe ? `<span class="read-receipt-status ms-1" data-msg-id="${m.id}"><i class="fa-solid fa-check"></i></span>` : '';
+            const deleteBtnHtml = isMe ? `<button class="btn btn-sm text-danger delete-msg-btn p-0 me-2" data-delete-url="/messages/delete-message/${m.id}/"><i class="fa-solid fa-trash-can"></i></button>` : '';
             const wrapper = document.createElement("div");
             wrapper.className = `d-flex flex-column mb-3 msg-wrapper ${isMe ? "align-items-end" : "align-items-start"}`;
-            wrapper.setAttribute('data-msg-id', m.id);
-            const bubble = document.createElement("div");
-            bubble.className = `msg-bubble ${isMe ? "msg-sent" : "msg-received"}`;
-            bubble.innerHTML = fileHtml + textHtml;
-            const meta = document.createElement("div");
-            meta.className = "d-flex align-items-center mt-1";
-            let deleteBtnHtml = '';
-            if (isMe) {
-                const deleteUrl = `/messages/delete-message/${m.id}/`;
-                deleteBtnHtml = `<button class="btn btn-sm text-danger delete-msg-btn p-0 me-2" data-delete-url="${deleteUrl}"><i class="fa-solid fa-trash-can"></i></button>`;
-            }
-            meta.innerHTML = `${deleteBtnHtml}<small class="msg-time">${m.created}</small>`;
-            wrapper.appendChild(bubble);
-            wrapper.appendChild(meta);
+            wrapper.dataset.msgId = m.id;
+            wrapper.innerHTML = `<div class="msg-bubble ${isMe ? 'msg-sent' : 'msg-received'}">${fileHtml}${textHtml}</div><div class="d-flex align-items-center mt-1">${deleteBtnHtml}<small class="msg-time">${localTime}</small>${readReceiptHtml}</div>`;
             chatEl.appendChild(wrapper);
             chatEl.scrollTop = chatEl.scrollHeight;
         }
-        
-        function connectToWebSocket(conversationId) {
-            if (chatSocket) {
-                chatSocket.close();
+
+        function updateUserStatus(userId, isOnline) {
+            if (userId === currentUserId) return;
+            const statusEl = document.getElementById('user-status-text');
+            if (statusEl) {
+                statusEl.textContent = isOnline ? 'Online' : 'Offline';
+                statusEl.classList.toggle('text-success', isOnline);
+                statusEl.classList.toggle('text-muted', !isOnline);
             }
+        }
 
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-            const wsUrl = `${wsProtocol}://${window.location.host}/ws/chat/${conversationId}/`;
-            
-            chatSocket = new WebSocket(wsUrl);
-
-            chatSocket.onopen = function(e) {
-                console.log("WebSocket connection established successfully.");
-            };
-
-            chatSocket.onmessage = function(e) {
-                console.log("Data received from WebSocket:", e.data);
-                try {
-                    const data = JSON.parse(e.data);
-                    if (data.type === 'chat_message') {
-                        const messageData = data.message;
-                        
-                        const activeChatForm = document.getElementById('send-form');
-                        if (activeChatForm && activeChatForm.dataset.pk == messageData.conversation_id) {
-                           appendMessage(messageData, messageData.sender_id === currentUserId);
-                        }
-
-                        updateChatList(messageData);
-                    }
-                } catch (error) {
-                    console.error("Error parsing WebSocket message:", error);
+        function updateMessageTicks(messageIds, status, actorId) {
+            if (actorId === currentUserId) return; // Don't update based on your own actions
+            messageIds.forEach(id => {
+                const receiptEl = document.querySelector(`.read-receipt-status[data-msg-id="${id}"]`);
+                if (!receiptEl) return;
+                let newTickHtml = '';
+                if (status === 'delivered' && !receiptEl.classList.contains('read')) {
+                    newTickHtml = `<i class="fa-solid fa-check-double"></i>`;
+                } else if (status === 'read') {
+                    receiptEl.classList.add('read');
+                    newTickHtml = `<i class="fa-solid fa-check-double" style="color: #3b82f6;"></i>`;
                 }
-            };
-
-            chatSocket.onclose = function(e) {
-                console.error('Chat socket closed unexpectedly. Code:', e.code, 'Reason:', e.reason);
-            };
-
-            chatSocket.onerror = function(err) {
-                console.error('WebSocket Error:', err);
-            };
-        }
-
-        function updateSelectionUI() {
-            const countEl = document.getElementById('selection-count');
-            const deleteBtn = document.getElementById('delete-selected-btn');
-            if (countEl) countEl.textContent = `${selectedMessages.size} Selected`;
-            if (deleteBtn) deleteBtn.disabled = selectedMessages.size === 0;
-        }
-
-        function enterSelectionMode(initialMessageWrapper) {
-            if (selectionMode) return;
-            selectionMode = true;
-            document.querySelector('.chat-container-card')?.classList.add('selection-active');
-            const chatBody = document.getElementById('chat');
-            if (chatBody) {
-                chatBody.classList.add('selection-mode');
-                chatBody.querySelectorAll('.msg-wrapper').forEach(wrapper => {
-                    if (wrapper.querySelector('.delete-msg-btn')) {
-                        wrapper.classList.add('can-select');
-                    }
-                });
-            }
-            toggleMessageSelection(initialMessageWrapper);
-        }
-
-        function exitSelectionMode() {
-            if (!selectionMode) return;
-            selectionMode = false;
-            document.querySelector('.chat-container-card')?.classList.remove('selection-active');
-            const chatBody = document.getElementById('chat');
-            if (chatBody) {
-                chatBody.classList.remove('selection-mode');
-                chatBody.querySelectorAll('.msg-wrapper.selected').forEach(el => el.classList.remove('selected'));
-                chatBody.querySelectorAll('.can-select').forEach(el => el.classList.remove('can-select'));
-            }
-            selectedMessages.clear();
-        }
-
-        function toggleMessageSelection(wrapper) {
-            const msgId = wrapper.dataset.msgId;
-            if (selectedMessages.has(msgId)) {
-                selectedMessages.delete(msgId);
-                wrapper.classList.remove('selected');
-            } else {
-                selectedMessages.add(msgId);
-                wrapper.classList.add('selected');
-            }
-            updateSelectionUI();
-        }
-        
-        function startPressTimer(event) {
-            const msgWrapper = event.target.closest('.msg-wrapper');
-            if (msgWrapper && msgWrapper.querySelector('.delete-msg-btn') && !selectionMode) {
-                pressTimer = window.setTimeout(() => enterSelectionMode(msgWrapper), 500);
-            }
-        }
-
-        function cancelPressTimer() { clearTimeout(pressTimer); }
-
-        function filterChats() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedUserType = userTypeFilter.value;
-            const selectedDepartment = departmentFilter.value;
-            let visibleCount = 0;
-            originalConversations.forEach(wrapper => {
-                const link = wrapper.querySelector('.chat-link');
-                if (!link) return;
-                const nameMatch = link.dataset.name.includes(searchTerm);
-                const userTypeMatch = (selectedUserType === 'all' || link.dataset.usertype === selectedUserType);
-                const departmentMatch = (selectedDepartment === 'all' || link.dataset.department === selectedDepartment);
-                if (nameMatch && userTypeMatch && departmentMatch) {
-                    wrapper.style.display = '';
-                    visibleCount++;
-                } else {
-                    wrapper.style.display = 'none';
-                }
+                if (newTickHtml) receiptEl.innerHTML = newTickHtml;
             });
-            let noResultsMsg = chatListContainer.querySelector('.no-results-message');
-            if (visibleCount === 0 && !noResultsMsg) {
-                noResultsMsg = document.createElement('div');
-                noResultsMsg.className = 'p-4 text-center text-muted no-results-message';
-                noResultsMsg.textContent = 'No conversations match your filters.';
-                chatListContainer.appendChild(noResultsMsg);
-            } else if (visibleCount > 0 && noResultsMsg) {
-                noResultsMsg.remove();
+        }
+
+        function updateChatList(messageData) {
+            const convoId = messageData.conversation_id;
+            const chatLinkWrapper = document.getElementById(`convo-wrapper-${convoId}`);
+            if (!chatLinkWrapper) return;
+            const lastMessageEl = chatLinkWrapper.querySelector('.last-message');
+            const chatTimeEl = chatLinkWrapper.querySelector('.chat-time');
+            if (lastMessageEl) {
+                let prefix = messageData.sender_id === currentUserId ? "You: " : "";
+                let text = messageData.files && messageData.files.length > 0 ? (messageData.text || 'Sent an attachment') : messageData.text;
+                lastMessageEl.textContent = `${prefix}${text}`.substring(0, 25) + (text.length > 25 ? '...' : '');
+            }
+            if (chatTimeEl) chatTimeEl.textContent = new Date(messageData.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            chatListContainer.prepend(chatLinkWrapper);
+        }
+        
+        function sendDeliveryConfirmation(messageIds) {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN && messageIds.length > 0) {
+                chatSocket.send(JSON.stringify({ type: 'delivery_confirmation', message_ids: Array.from(messageIds) }));
             }
         }
-
-        function createFloatingParticle() {
-            const sidebar = document.querySelector('.sidebar');
-            if (!sidebar) return;
-            const particle = document.createElement('div');
-            particle.className = 'floating-particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.animationDelay = Math.random() * 2 + 's';
-            particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
-            const colors = ['rgba(59, 130, 246, 0.6)', 'rgba(96, 165, 250, 0.6)', 'rgba(147, 197, 253, 0.6)'];
-            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-            sidebar.appendChild(particle);
-            setTimeout(() => { particle.remove(); }, 6000);
-        }
-
-        // --- 3. EVENT LISTENERS ---
-
-        if (toggleButton) { toggleButton.addEventListener('click', () => { body.classList.toggle('sidebar-visible'); }); }
-        if (overlay) { overlay.addEventListener('click', () => { body.classList.remove('sidebar-visible'); }); }
         
+        function sendReadReceipt(messageIds) {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN && messageIds.length > 0) {
+                chatSocket.send(JSON.stringify({ type: 'read_receipt', message_ids: Array.from(messageIds) }));
+            }
+        }
+        
+        // --- 4. EVENT LISTENERS & HANDLERS ---
+        
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden && currentConversationId && unreadMessagesQueue.size > 0) {
+                sendReadReceipt(Array.from(unreadMessagesQueue));
+                unreadMessagesQueue.clear();
+            }
+        });
+
         chatListContainer.addEventListener('click', function(event) {
             const link = event.target.closest('.chat-link');
             const deleteBtn = event.target.closest('.delete-chat-btn');
-
             if (deleteBtn) {
-                event.preventDefault();
-                event.stopPropagation();
-                const leaveUrl = deleteBtn.dataset.leaveUrl;
-                const wrapperToDelete = deleteBtn.closest('.chat-link-wrapper');
-                confirmDeleteBtn.dataset.leaveUrl = leaveUrl;
-                const tempId = `deletable-${Date.now()}`;
-                wrapperToDelete.id = tempId;
-                confirmDeleteBtn.dataset.targetId = tempId;
+                event.preventDefault(); event.stopPropagation();
+                const confirmBtn = document.getElementById('confirmDeleteBtn');
+                confirmBtn.dataset.leaveUrl = deleteBtn.dataset.leaveUrl;
+                confirmBtn.dataset.targetId = deleteBtn.closest('.chat-link-wrapper').id;
                 deleteModal.show();
             } else if (link) {
                 event.preventDefault();
                 exitSelectionMode();
-                const currentActive = chatListContainer.querySelector('.active');
-                if (currentActive) currentActive.classList.remove('active');
+                document.querySelector('.chat-link.active')?.classList.remove('active');
                 link.classList.add('active');
-                
-                const fetchUrl = link.getAttribute('href').replace('/conversation/', '/fetch-html/');
-                
+                const conversationId = link.getAttribute('href').match(/\/conversation\/(\d+)\//)[1];
+                const fetchUrl = `/messages/fetch-html/${conversationId}/`;
                 chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><div class="spinner-border text-primary"></div></div>`;
-                
                 fetch(fetchUrl)
                     .then(response => response.text())
                     .then(html => {
                         chatWindowContainer.innerHTML = html;
-                        const chatEl = document.getElementById("chat");
-                        if (chatEl) {
-                            chatEl.scrollTop = chatEl.scrollHeight;
-                            const conversationId = document.getElementById('send-form')?.dataset.pk;
-                            if (conversationId) {
-                                connectToWebSocket(conversationId);
-                            }
-                        }
+                        document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+                        connectToWebSocket(conversationId);
                         body.classList.add('mobile-chat-visible');
-                    })
-                    .catch(error => {
-                        console.error('Error fetching conversation:', error);
-                        chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><p class="text-danger">Could not load conversation.</p></div>`;
                     });
-            }
-        });
-
-        confirmDeleteBtn.addEventListener('click', async function() {
-            const leaveUrl = this.dataset.leaveUrl;
-            const targetId = this.dataset.targetId;
-            if (!leaveUrl || !targetId) return;
-            try {
-                const res = await fetch(leaveUrl, { method: 'POST', headers: { 'X-CSRFToken': csrftoken } });
-                const data = await res.json();
-                if (data.ok) {
-                    document.getElementById(targetId)?.remove();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (err) {
-                alert('An error occurred.');
-            } finally {
-                deleteModal.hide();
-                delete this.dataset.leaveUrl;
-                delete this.dataset.targetId;
-            }
-        });
-
-        chatWindowContainer.addEventListener('pointerdown', startPressTimer);
-        chatWindowContainer.addEventListener('pointerup', cancelPressTimer);
-        chatWindowContainer.addEventListener('pointerleave', cancelPressTimer);
-        chatWindowContainer.addEventListener('touchcancel', cancelPressTimer);
-
-        chatWindowContainer.addEventListener('click', async function(event) {
-            if (event.target.closest('#back-to-chats-btn')) { body.classList.remove('mobile-chat-visible'); exitSelectionMode(); }
-            if (event.target.closest('#cancel-selection-btn')) { exitSelectionMode(); }
-            if (event.target.closest('#file-preview-clear')) {
-                const form = document.getElementById('send-form');
-                if (form) {
-                    const fileInput = form.querySelector('#file-upload-input');
-                    if(fileInput) fileInput.value = '';
-                    document.getElementById('file-preview-container').classList.add('d-none');
-                }
-            }
-            const msgWrapper = event.target.closest('.msg-wrapper.can-select');
-            if (selectionMode && msgWrapper) {
-                toggleMessageSelection(msgWrapper);
-                return;
-            }
-            const deleteSelectedBtn = event.target.closest('#delete-selected-btn');
-            if (deleteSelectedBtn && selectedMessages.size > 0) {
-                if (!confirm(`Are you sure you want to delete ${selectedMessages.size} messages?`)) return;
-                try {
-                    const res = await fetch("{% url 'messaging:delete_messages_bulk_ajax' %}", {
-                        method: 'POST',
-                        headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ids: Array.from(selectedMessages) })
-                    });
-                    const data = await res.json();
-                    if (data.ok) {
-                        selectedMessages.forEach(id => { document.querySelector(`[data-msg-id="${id}"]`)?.remove(); });
-                        exitSelectionMode();
-                    } else { alert('Error: ' + data.error); }
-                } catch (err) { alert('An error occurred.'); }
-            }
-        });
-        
-        chatWindowContainer.addEventListener('change', function(event) {
-            const fileInput = event.target;
-            if (fileInput.matches('#file-upload-input')) {
-                const previewContainer = document.getElementById('file-preview-container');
-                const previewName = document.getElementById('file-preview-name');
-                const files = fileInput.files;
-                if (files.length > 0) {
-                    previewName.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
-                    previewContainer.classList.remove('d-none');
-                } else {
-                    previewContainer.classList.add('d-none');
-                }
-            }
-        });
-        
-        chatWindowContainer.addEventListener('keydown', function(event) {
-            if (event.target.matches('.chat-input') && event.key === 'Enter') {
-                if (event.shiftKey) {
-                    return;
-                }
-                event.preventDefault();
-                const form = event.target.closest('form');
-                if (form) {
-                    const sendButton = form.querySelector('.send-btn');
-                    if (sendButton && !sendButton.disabled) {
-                        sendButton.click();
-                    }
-                }
             }
         });
 
         chatWindowContainer.addEventListener('submit', async function(event) {
             if (event.target.id !== 'send-form') return;
             event.preventDefault();
-            
             const formEl = event.target;
-            const formData = new FormData(formEl);
-            
-            const text = formData.get('text').trim();
+            const inputEl = formEl.querySelector('textarea[name="text"]');
             const fileInput = formEl.querySelector('input[type="file"]');
-            if (!text && (!fileInput || fileInput.files.length === 0)) {
-                return;
-            }
-
-            const sendUrl = formEl.dataset.sendUrl;
-            try {
-                const response = await fetch(sendUrl, {
-                    method: "POST",
-                    headers: { "X-CSRFToken": csrftoken, "Accept": "application/json" },
-                    body: formData
-                });
-                const data = await response.json();
-                
-                if (response.ok && data.ok) {
-                    formEl.reset();
-                    document.getElementById('file-preview-container')?.classList.add('d-none');
-                } else {
-                    alert("Error: " + (data.error || "An unknown error occurred."));
+            const text = inputEl.value.trim();
+            const files = fileInput.files;
+            if (!text && files.length === 0) return;
+            if (files.length > 0) {
+                const formData = new FormData(formEl);
+                const sendUrl = `/messages/send/${currentConversationId}/`;
+                try {
+                    const response = await fetch(sendUrl, {method: "POST", headers: { "X-CSRFToken": csrftoken, "Accept": "application/json" }, body: formData});
+                    const data = await response.json();
+                    if (!data.ok) alert("Error uploading file: " + data.error);
+                } catch (error) { console.error("Failed to send file message:", error); }
+            } else {
+                if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                    chatSocket.send(JSON.stringify({ type: 'chat_message', message: text }));
                 }
-            } catch (error) {
-                console.error("Failed to send message:", error);
-                alert("A connection error occurred while sending the message.");
+            }
+            formEl.reset();
+            document.getElementById('file-preview-container')?.classList.add('d-none');
+            inputEl.focus();
+        });
+
+        chatWindowContainer.addEventListener('click', async function(event) {
+            if (event.target.closest('#back-to-chats-btn')) { body.classList.remove('mobile-chat-visible'); exitSelectionMode(); }
+            if (event.target.closest('#cancel-selection-btn')) { exitSelectionMode(); }
+            if (event.target.closest('#file-preview-clear')) {
+                const fileInput = document.getElementById('file-upload-input');
+                if(fileInput) fileInput.value = '';
+                document.getElementById('file-preview-container').classList.add('d-none');
+            }
+            const msgWrapper = event.target.closest('.msg-wrapper.can-select');
+            if (selectionMode && msgWrapper) { toggleMessageSelection(msgWrapper); return; }
+            const deleteBtn = event.target.closest('.delete-msg-btn');
+            if (deleteBtn && !selectionMode) {
+                if (!confirm('Are you sure you want to delete this message?')) return;
+                try {
+                    const res = await fetch(deleteBtn.dataset.deleteUrl, { method: 'POST', headers: { 'X-CSRFToken': csrftoken } });
+                    const data = await res.json();
+                    if (!data.ok) alert('Error: ' + data.error);
+                } catch (err) { alert('An error occurred.'); }
+            }
+            const deleteSelectedBtn = event.target.closest('#delete-selected-btn');
+            if (deleteSelectedBtn && selectedMessages.size > 0) {
+                if (!confirm(`Are you sure you want to delete ${selectedMessages.size} messages?`)) return;
+                try {
+                    const res = await fetch("{% url 'messaging:delete_messages_bulk_ajax' %}", { method: 'POST', headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: Array.from(selectedMessages) }) });
+                    const data = await res.json();
+                    if (data.ok) {
+                        selectedMessages.forEach(id => document.querySelector(`.msg-wrapper[data-msg-id="${id}"]`)?.remove());
+                        exitSelectionMode();
+                    } else { alert('Error: ' + data.error); }
+                } catch (err) { alert('An error occurred.'); }
             }
         });
 
-        // --- 4. INITIALIZATION LOGIC ---
-        
-        setInterval(createFloatingParticle, 1500);
-        for(let i = 0; i < 5; i++) { setTimeout(createFloatingParticle, i * 300); }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const openChatId = urlParams.get('open_chat');
-        if (openChatId) {
-            const chatLinkToOpen = document.querySelector(`a.chat-link[href*='/conversation/${openChatId}/']`);
-            if (chatLinkToOpen) {
-                setTimeout(() => { chatLinkToOpen.click(); }, 100);
+        chatWindowContainer.addEventListener('change', function(event) {
+            const fileInput = event.target;
+            if (fileInput.matches('#file-upload-input')) {
+                const previewContainer = document.getElementById('file-preview-container');
+                const previewName = document.getElementById('file-preview-name');
+                if (fileInput.files.length > 0) {
+                    previewName.textContent = fileInput.files.length === 1 ? fileInput.files[0].name : `${fileInput.files.length} files selected`;
+                    previewContainer.classList.remove('d-none');
+                } else { previewContainer.classList.add('d-none'); }
             }
-            window.history.replaceState({}, document.title, window.location.pathname);
+        });
+        
+        chatWindowContainer.addEventListener('keydown', function(event) {
+            if (event.target.matches('.chat-input') && event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                event.target.closest('form').querySelector('.send-btn').click();
+            }
+        });
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            const { leaveUrl, targetId } = this.dataset;
+            if (!leaveUrl || !targetId) return;
+            try {
+                const res = await fetch(leaveUrl, { method: 'POST', headers: { 'X-CSRFToken': csrftoken } });
+                const data = await res.json();
+                if (data.ok) {
+                    document.getElementById(targetId)?.remove();
+                    if (`convo-wrapper-${currentConversationId}` === targetId) {
+                         chatWindowContainer.innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><div class="text-center"><i class="fa-solid fa-comments mb-3" style="font-size: 4rem; color: rgba(59, 130, 246, 0.3);"></i><h5 class="fw-bold">Your conversations will appear here</h5><p class="text-muted">Select a chat from the list to get started.</p></div></div>`;
+                    }
+                } else { alert('Error: ' + data.error); }
+            } catch (err) { alert('An error occurred.'); } 
+            finally { deleteModal.hide(); }
+        });
+        
+        chatWindowContainer.addEventListener('pointerdown', (e) => {
+            const msgWrapper = e.target.closest('.msg-wrapper');
+            if (msgWrapper && msgWrapper.querySelector('.delete-msg-btn') && !selectionMode) {
+                pressTimer = window.setTimeout(() => enterSelectionMode(msgWrapper), 500);
+            }
+        });
+        chatWindowContainer.addEventListener('pointerup', () => clearTimeout(pressTimer));
+        chatWindowContainer.addEventListener('pointerleave', () => clearTimeout(pressTimer));
+
+        // --- 5. MULTI-DELETE FUNCTIONS ---
+        function enterSelectionMode(initialMessageWrapper){if(selectionMode)return;selectionMode=!0,document.querySelector(".chat-container-card")?.classList.add("selection-active");const e=document.getElementById("chat");e&&(e.classList.add("selection-mode"),e.querySelectorAll(".msg-wrapper").forEach(e=>{e.querySelector(".delete-msg-btn")&&e.classList.add("can-select")})),toggleMessageSelection(initialMessageWrapper)}function exitSelectionMode(){if(!selectionMode)return;selectionMode=!1,document.querySelector(".chat-container-card")?.classList.remove("selection-active");const e=document.getElementById("chat");e&&(e.classList.remove("selection-mode"),e.querySelectorAll(".msg-wrapper.selected").forEach(e=>e.classList.remove("selected")),e.querySelectorAll(".can-select").forEach(e=>e.classList.remove("can-select"))),selectedMessages.clear()}function toggleMessageSelection(e){const t=e.dataset.msgId;selectedMessages.has(t)?(selectedMessages.delete(t),e.classList.remove("selected")):(selectedMessages.add(t),e.classList.add("selected")),updateSelectionUI()}function updateSelectionUI(){const e=document.getElementById("selection-count"),t=document.getElementById("delete-selected-btn");e&&(e.textContent=`${selectedMessages.size} Selected`),t&&(t.disabled=0===selectedMessages.size)}
+        
+        // --- 6. UTILITY & INITIALIZATION ---
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1)); break;
+                    }
+                }
+            }
+            return cookieValue;
         }
 
-        const departments = new Set();
-        originalConversations.forEach(wrapper => {
-            const link = wrapper.querySelector('.chat-link');
-            if(link) {
-                const dept = link.dataset.department;
-                if (dept && dept !== 'none') departments.add(dept);
-            }
-        });
-        departments.forEach(dept => {
-            const option = document.createElement('option');
-            option.value = dept;
-            option.textContent = dept;
-            departmentFilter.appendChild(option);
-        });
-
+        const searchInput = document.getElementById('chat-search-input');
+        const userTypeFilter = document.getElementById('chat-usertype-filter');
+        const departmentFilter = document.getElementById('chat-department-filter');
+        const originalConversations = Array.from(document.querySelectorAll('#chat-list-container .chat-link-wrapper'));
+        function filterChats() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedUserType = userTypeFilter.value;
+            const selectedDepartment = departmentFilter.value;
+            originalConversations.forEach(wrapper => {
+                const link = wrapper.querySelector('.chat-link');
+                const nameMatch = link.dataset.name.includes(searchTerm);
+                const userTypeMatch = (selectedUserType === 'all' || link.dataset.usertype === selectedUserType);
+                const departmentMatch = (selectedDepartment === 'all' || link.dataset.department === selectedDepartment);
+                wrapper.style.display = (nameMatch && userTypeMatch && departmentMatch) ? '' : 'none';
+            });
+        }
         searchInput.addEventListener('input', filterChats);
         userTypeFilter.addEventListener('change', filterChats);
         departmentFilter.addEventListener('change', filterChats);
+        document.getElementById('sidebar-toggle-btn')?.addEventListener('click', () => body.classList.toggle('sidebar-visible'));
+        document.getElementById('overlay')?.addEventListener('click', () => body.classList.remove('sidebar-visible'));
+        const urlParams = new URLSearchParams(window.location.search);
+        const openChatId = urlParams.get('open_chat');
+        if (openChatId) {
+            document.querySelector(`a.chat-link[href*='/conversation/${openChatId}/']`)?.click();
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
     });
-</script>
+    </script>
 </body>
 {% endblock %}

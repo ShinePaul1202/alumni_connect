@@ -9,6 +9,7 @@
             <img src="{{ other_user.profile.avatar.url|default:'/static/core/img/avatar-placeholder.png' }}" alt="Avatar" class="avatar-sm">
             <div class="ms-3">
                 <h6 class="mb-0 fw-bold">{{ other_user.get_full_name|default:other_user.username }}</h6>
+                <!-- This ID is targeted by JavaScript to show Online/Offline status -->
                 <small id="user-status-text" class="text-muted">Offline</small>
             </div>
         {% else %}
@@ -22,7 +23,7 @@
         {% endif %}
     </div>
 
-    <!-- Selection Mode Header -->
+    <!-- Selection Mode Header (Preserved from your original code) -->
     <div class="selection-header">
         <button id="cancel-selection-btn" class="btn btn-icon"><i class="fa-solid fa-times"></i></button>
         <span id="selection-count" class="fw-bold">0 Selected</span>
@@ -32,8 +33,9 @@
     <!-- Chat Message Body -->
     <div class="chat-body" id="chat">
         {% for message in messages %}
-            <div class="d-flex flex-column mb-3 msg-wrapper {% if message.sender == request.user %}align-items-end{% else %}align-items-start{% endif %}" data-msg-id="{{ message.id }}">
+            <div class="d-flex flex-column mb-3 msg-wrapper {% if message.sender == request.user %}align-items-end{% else %}align-items-start{% endif %} {% if message.sender != request.user and not message.receipts.all %}unread-by-me{% endif %}" data-msg-id="{{ message.id }}">
                 <div class="msg-bubble {% if message.sender == request.user %}msg-sent{% else %}msg-received{% endif %}">
+                    <!-- File Display Logic (Preserved from your original code) -->
                     {% if message.files.all %}
                         {% for file in message.files.all %}
                             {% if file.is_image %}
@@ -54,7 +56,26 @@
                         </button>
                     {% endif %}
                     <small class="msg-time">{{ message.created_at|time:"H:i" }}</small>
-                    <!-- Read receipt checkmark will be added dynamically by JS -->
+                    
+                    <!-- =============================================================== -->
+                    <!-- == THIS IS THE ONLY ADDITION REQUIRED FOR THE READ RECEIPTS === -->
+                    <!-- This span provides the hook for JavaScript to add/update checkmarks -->
+                    {% if message.sender == request.user %}
+                        <span class="read-receipt-status ms-1" data-msg-id="{{ message.id }}">
+                            {% if message.is_read_by_all %}
+                                <!-- Double Blue Tick for Read -->
+                                <i class="fa-solid fa-check-double" style="color: #3b82f6;"></i>
+                            {% elif message.is_delivered_to_all %}
+                                <!-- Double Grey Tick for Delivered -->
+                                <i class="fa-solid fa-check-double"></i>
+                            {% else %}
+                                <!-- Single Grey Tick for Sent -->
+                                <i class="fa-solid fa-check"></i>
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                    <!-- =============================================================== -->
+
                 </div>
             </div>
         {% endfor %}
@@ -62,7 +83,7 @@
 
     <!-- Chat Input Form -->
     <div class="chat-footer">
-        <!-- File Preview -->
+        <!-- File Preview (Preserved from your original code) -->
         <div id="file-preview-container" class="file-preview-wrapper d-none">
             <span id="file-preview-name"></span>
             <button id="file-preview-clear" class="btn-close btn-sm"></button>
@@ -70,7 +91,6 @@
 
         <form id="send-form"
               class="chat-input-form"
-              data-send-url="{% url 'messaging:send_message_ajax' pk=conversation.pk %}"
               data-pk="{{ conversation.pk }}"
               autocomplete="off"
               {% if not other_user %}disabled{% endif %}>
@@ -89,11 +109,12 @@
     </div>
 </div>
 
-<!-- Add some basic CSS for the new elements -->
+<!-- CSS Styles (Preserved from your original code) -->
 <style>
     .chat-container-card { display: flex; flex-direction: column; height: 100%; width: 100%; }
     .chat-header { padding: 1rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; flex-shrink: 0; }
     .avatar-sm { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    #user-status-text.text-success { font-weight: 500; }
     .chat-body { flex-grow: 1; padding: 1.5rem; overflow-y: auto; }
     .chat-footer { padding: 1rem; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
     .chat-input-form { display: flex; align-items: center; gap: 0.75rem; }
@@ -113,4 +134,7 @@
     .chat-body.selection-mode .msg-wrapper.can-select { cursor: pointer; }
     .chat-body.selection-mode .msg-wrapper.selected .msg-bubble { background: #93c5fd; }
     .file-preview-wrapper { background: #e2e8f0; padding: 0.5rem 1rem; border-radius: 0.5rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+    .read-receipt-status .fa-check { color: #94a3b8; /* Muted grey for sent/delivered */ }
+    .read-receipt-status .fa-check-double { color: #94a3b8; /* Muted grey for delivered */ }
+    .read-receipt-status.read .fa-check-double { color: #3b82f6; /* Blue for read */ }
 </style>

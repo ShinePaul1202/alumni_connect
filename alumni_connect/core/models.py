@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.utils import timezone
 
 
 class Profile(models.Model):
@@ -23,7 +24,7 @@ class Profile(models.Model):
     graduation_year = models.PositiveIntegerField(null=True, blank=True)
     is_verified = models.BooleanField(default=False)
     has_seen_verification_message = models.BooleanField(default=False)
-    last_seen = models.DateTimeField(auto_now=True)
+    last_seen = models.DateTimeField(default=timezone.now)
 
     # This field will store any warnings issued by an admin.
     fraud_warning = models.TextField(blank=True, null=True)
@@ -51,6 +52,13 @@ class Profile(models.Model):
     
     def __str__(self):
         return f'{self.user.username} Profile'
+    
+    def is_online(self):
+        """Returns True if the user was last seen within the last 5 minutes."""
+        if not self.last_seen:
+            return False
+        return (timezone.now() - self.last_seen).total_seconds() < 300
+
 
 class Connection(models.Model):
     """

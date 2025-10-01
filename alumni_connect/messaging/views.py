@@ -1,18 +1,19 @@
 import json
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from .models import Conversation, ReadReceipt, DeliveryReceipt
 from django.db.models import Count, Q
 from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib import messages as flash_messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
-from .models import Conversation, ConversationParticipant, Message, MessageFile, ReadReceipt
+from .models import Conversation, ConversationParticipant, Message, MessageFile
 from core.models import Connection, Profile
 
 User = get_user_model()
@@ -161,67 +162,54 @@ from .models import Conversation, Message, MessageFile
 @login_required
 def send_message_ajax(request, pk):
     """
-    Saves a single message with text and/or multiple files,
-    then broadcasts it via the WebSocket consumer.
+    This view now handles messages with file uploads.
+    It saves the message and files, then broadcasts the result over the WebSocket channel.
     """
-    # 1. SECURITY CHECK: Get the conversation and ensure the current user is a participant.
-    # This prevents users from sending messages to conversations they don't belong to.
     convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
-
-    # 2. DATA EXTRACTION: Get text and files from the incoming request.
     text = (request.POST.get("text") or "").strip()
     files = request.FILES.getlist('file')
 
-    # 3. VALIDATION: Ensure the message is not empty.
     if not text and not files:
         return JsonResponse({"ok": False, "error": "Message cannot be empty"}, status=400)
-
-    # 4. DATABASE: Create the Message object and link any files.
-    # Create the main message object with the text content.
+    
+    # If any user has previously deleted this conversation, a new message
+    # brings it back for everyone.
+    if convo.deleted_by.exists():
+        convo.deleted_by.clear()
+        
+    # Create the Message and associated MessageFile objects
     msg = Message.objects.create(conversation=convo, sender=request.user, text=text)
-
-    # Process and link each uploaded file to the message.
     file_data_list = []
     for f in files:
-        # Create a MessageFile instance for each file.
         message_file = MessageFile.objects.create(file=f)
-        # Add it to the many-to-many relationship on the message.
         msg.files.add(message_file)
-        # Prepare file data for the WebSocket payload.
+        # Prepare file data for the WebSocket payload
         file_data_list.append({
             'url': message_file.file.url,
-            'name': str(message_file.file.name).split('/')[-1] # Get just the filename
+            'name': str(f.name) # Use the original filename
         })
 
-    # 5. UPDATE CONVERSATION: Trigger the `updated_at` field by saving the conversation.
-    # This is crucial for sorting the conversation list correctly.
+    # Trigger the `updated_at` field on the conversation
     convo.save()
 
-    # 6. BROADCAST: Send the new message data to the WebSocket group.
+    # Broadcast the new message data to the WebSocket group
     channel_layer = get_channel_layer()
-
-    # The payload dictionary must contain everything the frontend needs to render the message
-    # AND update the conversation list.
     payload = {
-        'type': 'chat_message',  # This tells the consumer which method to run
+        'type': 'broadcast_message',  # The consumer's handler method
         'message': {
             "id": msg.id,
-            "conversation_id": pk, # Essential for updating the correct chat in the list
+            "conversation_id": pk,
             "sender_id": msg.sender.id,
             "sender_username": msg.sender.username,
             "text": msg.text,
-            "created": msg.created_at.strftime("%H:%M"),
-            "files": file_data_list, # List of dictionaries for any files
+            "created_at": msg.created_at.isoformat(),
+            "created_at_formatted": msg.created_at.strftime("%H:%M"),
+            "files": file_data_list, # Include the file data in the broadcast
         }
     }
 
-    # Use async_to_sync to call the async group_send method from this sync view.
-    async_to_sync(channel_layer.group_send)(
-        f'chat_{pk}',  # The group name must match the one in the consumer
-        payload
-    )
+    async_to_sync(channel_layer.group_send)(f'chat_{pk}', payload)
 
-    # 7. RESPONSE: Return a success response to the client's AJAX call.
     return JsonResponse({"ok": True})
 
 @login_required
@@ -263,15 +251,52 @@ def fetch_messages(request, pk):
 @login_required
 def fetch_conversation_html(request, pk):
     """
-    AJAX endpoint: Fetches the rendered HTML for a conversation window.
+    AJAX endpoint: Fetches chat HTML and robustly marks all waiting
+    messages as both DELIVERED and READ.
     """
-    convo = get_object_or_404(Conversation, pk=pk, participants=request.user)
-    
-    # --- THIS IS THE FIX ---
-    # We have removed the old, incorrect code that was trying to save to 'last_read_at'.
-    # The new read receipt logic will be handled by the ReadReceipt model when we implement it.
-    
-    messages_qs = convo.messages.select_related("sender").prefetch_related('files').all()
+    convo = get_object_or_404(Conversation.objects.prefetch_related('messages'), pk=pk, participants=request.user)
+    channel_layer = get_channel_layer()
+
+    # --- FIX PART 1: Handle DELIVERY Receipts ---
+    # Find messages from others that this user has NOT received a delivery receipt for.
+    messages_to_mark_delivered = convo.messages.exclude(sender=request.user).exclude(delivery_receipts__user=request.user)
+    delivered_message_ids = list(messages_to_mark_delivered.values_list('id', flat=True))
+
+    if delivered_message_ids:
+        receipts_to_create = [DeliveryReceipt(message_id=msg_id, user=request.user) for msg_id in delivered_message_ids]
+        DeliveryReceipt.objects.bulk_create(receipts_to_create)
+        
+        # Broadcast that these messages were DELIVERED
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{pk}',
+            {
+                'type': 'broadcast_message_delivered',
+                'message_ids': delivered_message_ids,
+                'delivered_to_id': request.user.id
+            }
+        )
+
+    # --- FIX PART 2: Handle READ Receipts ---
+    # Find messages from others that this user has NOT read yet.
+    messages_to_mark_as_read = convo.messages.exclude(sender=request.user).exclude(receipts__user=request.user)
+    read_message_ids = list(messages_to_mark_as_read.values_list('id', flat=True))
+
+    if read_message_ids:
+        receipts_to_create = [ReadReceipt(message_id=msg_id, user=request.user) for msg_id in read_message_ids]
+        ReadReceipt.objects.bulk_create(receipts_to_create)
+        
+        # Broadcast that these messages were READ
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{pk}',
+            {
+                'type': 'broadcast_read_receipt',
+                'message_ids': read_message_ids,
+                'reader_id': request.user.id
+            }
+        )
+
+    # Prepare context for rendering the template
+    messages_qs = convo.messages.select_related("sender").prefetch_related('delivery_receipts', 'receipts').all()
     other = convo.participants.exclude(pk=request.user.pk).first()
     
     context = {
@@ -307,17 +332,26 @@ def leave_conversation_ajax(request, pk):
 @require_POST
 @login_required
 def delete_message_ajax(request, pk):
-    """AJAX endpoint: delete a message by its pk."""
+    """AJAX endpoint: delete a message and broadcast the deletion."""
     try:
-        # Find the message
         message = get_object_or_404(Message, pk=pk)
         
-        # SECURITY CHECK: Ensure the user deleting the message is the original sender.
         if request.user != message.sender:
             return JsonResponse({"ok": False, "error": "Forbidden"}, status=403)
             
-        # If the check passes, delete the message
+        conversation_id = message.conversation.id
+        message_id = message.id
         message.delete()
+        
+        # BROADCAST THE DELETION EVENT
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{conversation_id}',
+            {
+                'type': 'broadcast_message_deleted',
+                'message_id': message_id,
+            }
+        )
         
         return JsonResponse({"ok": True})
 
